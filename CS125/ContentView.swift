@@ -10,6 +10,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var progress: CGFloat = 0.75 // Example progress, set to 75%
+    @State private var hourlyCaloriesBurned: [Double] = [0,0,0,0,0,0,
+                                                         0,55,20,20,24,35,
+                                                         13,40,550,20,0,0,
+                                                         0,0,0,0,0,0]
+    
 
     var body: some View {
         TabView(selection: .constant(1)) {
@@ -49,7 +54,7 @@ struct ContentView: View {
                             Spacer()
                             
                             VStack(alignment: .trailing) {
-                                Text("1,000")
+                                Text("1,000 cal")
                                     .font(.headline)
                                 Text("Daily Goal")
                                     .font(.caption)
@@ -57,19 +62,40 @@ struct ContentView: View {
                         }
                         .padding()
 
-                        // Statistic Bar Graph Placeholder
+                        // Statistic Bar Graph
                         VStack(alignment: .leading) {
                             Text("Statistic")
                                 .font(.headline)
                                 .padding(.bottom, 5)
-                            // Placeholder for bar graph, you'll need to implement this with your own custom view or library
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(height: 100)
-                            Text("Insight")
-                                .font(.headline)
-                                .padding(.top, 5)
+                            
+                            // Calculating scale factor based on max calories
+                            let maxCalories = hourlyCaloriesBurned.max() ?? 0
+                            let maxHeight: Double = 100 // The max height you want for your tallest bar
+                            let scaleFactor = maxCalories > 0 ? maxHeight / maxCalories : 0
+
+                            // Creating the bar graph
+                            VStack {
+                                HStack(alignment: .bottom, spacing: 0.5) {
+                                    ForEach(0..<hourlyCaloriesBurned.count, id: \.self) { index in
+                                        VStack {
+                                            // Create a bar for each hour
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(hourlyCaloriesBurned[index] > 0 ? Color.orange : Color.clear)
+                                                .frame(width: 12, height: max(CGFloat(hourlyCaloriesBurned[index]) * scaleFactor, 2))
+                                                .padding(.bottom, 8)
+                                            // Add hour labels at the bottom
+                                            Text(index % 3 == 0 ? "\(index % 12 == 0 ? 12 : index % 12)\(index < 12 ? "\nAM" : "\nPM")" : " ")
+                                                .font(.system(size: 6)) // Smaller font size to ensure it fits
+                                                .frame(height: 20)
+                                        }
+                                    }
+                                }
+                            }
+                            .frame(height: 120) // Set the height of the entire bar graph container
                         }
+                        .padding(.horizontal)
+
+
                         
                         Spacer() // Pushes everything to the top
                     }
