@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import HealthKit
 
 struct HomeView: View {
     var body: some View {
@@ -14,6 +15,8 @@ struct HomeView: View {
                                                      0,55,20,20,24,35,
                                                      13,40,550,20,0,0,
                                                      0,0,0,0,0,0]
+        @ObservedObject var manager = HealthKitManager()
+        
         VStack(spacing: 20) {
             Text("You have walked \(Int(progress * 10000)) steps today")
                 .font(.title)
@@ -96,6 +99,30 @@ struct HomeView: View {
             Spacer() // Pushes everything to the top
         }
         .padding()
+        .onAppear {
+            // Request HealthKit authorization first
+            manager.requestAuthorization { authorized, error in
+                if let error = error {
+                    // Handle any errors here
+                    print("Authorization Error: \(error.localizedDescription)")
+                } else if authorized {
+                    // Fetch workouts only after authorization is granted
+                    manager.fetchWorkouts { (workouts, error) in
+                        if let error = error {
+                            // Handle any errors here
+                            print("Error fetching workouts: \(error.localizedDescription)")
+                        } else if let workouts = workouts {
+                            // Process the retrieved workouts here
+                            for workout in workouts {
+                                print("Workout: \(workout.workoutActivityType), \(workout.startDate), \(workout.duration), \(workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0) kcal")
+                            }
+                        }
+                    }
+                } else {
+                    print("HealthKit authorization was not granted.")
+                }
+            }
+        }
     }
 }
 

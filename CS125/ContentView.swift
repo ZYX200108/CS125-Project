@@ -19,6 +19,11 @@ struct ContentView: View {
                 .tabItem{
                     Image(systemName: "house")
                 }
+            AddActivity()
+                .tag("Adding")
+                .tabItem {
+                    Image(systemName: "plus.app")
+                }
             SettingView()
                 .tag("Setting")
                 .tabItem{

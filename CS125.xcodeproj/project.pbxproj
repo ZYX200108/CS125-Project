@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		1B5E83D12B71BF6D00ADD5B3 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5E83D02B71BF6D00ADD5B3 /* HomeView.swift */; };
 		1B5E83D32B71C07000ADD5B3 /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5E83D22B71C07000ADD5B3 /* SettingView.swift */; };
+		1B5E83D52B71C42300ADD5B3 /* HealthData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5E83D42B71C42300ADD5B3 /* HealthData.swift */; };
+		1B5E83D92B71F94B00ADD5B3 /* AddActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5E83D82B71F94B00ADD5B3 /* AddActivity.swift */; };
 		1BE49FDD2B60B243001C3CD8 /* CS125App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE49FDC2B60B243001C3CD8 /* CS125App.swift */; };
 		1BE49FDF2B60B243001C3CD8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE49FDE2B60B243001C3CD8 /* ContentView.swift */; };
 		1BE49FE12B60B245001C3CD8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1BE49FE02B60B245001C3CD8 /* Assets.xcassets */; };
@@ -39,6 +41,10 @@
 		1B5E83CB2B71BAC300ADD5B3 /* CS125Release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CS125Release.entitlements; sourceTree = "<group>"; };
 		1B5E83D02B71BF6D00ADD5B3 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		1B5E83D22B71C07000ADD5B3 /* SettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingView.swift; sourceTree = "<group>"; };
+		1B5E83D42B71C42300ADD5B3 /* HealthData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthData.swift; sourceTree = "<group>"; };
+		1B5E83D62B71EFC500ADD5B3 /* CS125.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CS125.entitlements; sourceTree = "<group>"; };
+		1B5E83D72B71F51300ADD5B3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1B5E83D82B71F94B00ADD5B3 /* AddActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddActivity.swift; sourceTree = "<group>"; };
 		1BE49FD92B60B243001C3CD8 /* CS125.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CS125.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BE49FDC2B60B243001C3CD8 /* CS125App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CS125App.swift; sourceTree = "<group>"; };
 		1BE49FDE2B60B243001C3CD8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -99,11 +105,15 @@
 		1BE49FDB2B60B243001C3CD8 /* CS125 */ = {
 			isa = PBXGroup;
 			children = (
+				1B5E83D72B71F51300ADD5B3 /* Info.plist */,
+				1B5E83D62B71EFC500ADD5B3 /* CS125.entitlements */,
 				1B5E83CB2B71BAC300ADD5B3 /* CS125Release.entitlements */,
 				1BE49FDC2B60B243001C3CD8 /* CS125App.swift */,
 				1BE49FDE2B60B243001C3CD8 /* ContentView.swift */,
 				1B5E83D02B71BF6D00ADD5B3 /* HomeView.swift */,
+				1B5E83D42B71C42300ADD5B3 /* HealthData.swift */,
 				1B5E83D22B71C07000ADD5B3 /* SettingView.swift */,
+				1B5E83D82B71F94B00ADD5B3 /* AddActivity.swift */,
 				1BE49FE02B60B245001C3CD8 /* Assets.xcassets */,
 				1BE49FE22B60B245001C3CD8 /* Preview Content */,
 			);
@@ -266,8 +276,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				1B5E83D12B71BF6D00ADD5B3 /* HomeView.swift in Sources */,
+				1B5E83D52B71C42300ADD5B3 /* HealthData.swift in Sources */,
 				1B5E83D32B71C07000ADD5B3 /* SettingView.swift in Sources */,
 				1BE49FDF2B60B243001C3CD8 /* ContentView.swift in Sources */,
+				1B5E83D92B71F94B00ADD5B3 /* AddActivity.swift in Sources */,
 				1BE49FDD2B60B243001C3CD8 /* CS125App.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -429,11 +441,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CS125/CS125.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"CS125/Preview Content\"";
+				DEVELOPMENT_TEAM = BB26TD8L7J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CS125/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -461,8 +476,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"CS125/Preview Content\"";
+				DEVELOPMENT_TEAM = BB26TD8L7J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CS125/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -488,6 +505,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BB26TD8L7J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
 				MARKETING_VERSION = 1.0;
@@ -507,6 +525,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BB26TD8L7J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
 				MARKETING_VERSION = 1.0;
@@ -525,6 +544,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BB26TD8L7J;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = YuxueZhou.CS125UITests;
@@ -542,6 +562,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BB26TD8L7J;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = YuxueZhou.CS125UITests;
