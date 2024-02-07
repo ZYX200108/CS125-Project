@@ -10,7 +10,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State var selectedTab = "Home"
-    
+    @ObservedObject public var viewModel: AuthenticationViewModel
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -19,12 +19,17 @@ struct ContentView: View {
                 .tabItem{
                     Image(systemName: "house")
                 }
-            AddActivity()
+            AddActivityView()
                 .tag("Adding")
                 .tabItem {
                     Image(systemName: "plus.app")
                 }
-            SettingView()
+            RecommendView()
+                .tag("Recommendation")
+                .tabItem {
+                    Image(systemName: "lightbulb.max")
+                }
+            SettingView(viewModel: viewModel)
                 .tag("Setting")
                 .tabItem{
                     Image(systemName: "gear")
@@ -35,7 +40,8 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        let viewModel = AuthenticationViewModel()
+        ContentView(viewModel: viewModel)
     }
 }
 

@@ -8,47 +8,57 @@
 import SwiftUI
 
 struct SettingView: View {
+    @ObservedObject public var viewModel: AuthenticationViewModel
+    
     var body: some View {
-        List {
-            Section(header: Text("Account")) {
-                HStack {
-                    Text("Username")
-                    Spacer()
-                    Text("User123")
-                        .foregroundColor(.gray)
+        VStack {
+            List {
+                Section(header: Text("Account")) {
+                    HStack {
+                        Text("Username")
+                        Spacer()
+                        Text(viewModel.displayName)
+                            .foregroundColor(.gray)
+                    }
+                    HStack {
+                        Text("Email")
+                        Spacer()
+                        Text(viewModel.email)
+                            .foregroundColor(.gray)
+                    }
                 }
-                HStack {
-                    Text("Email")
-                    Spacer()
-                    Text("user@example.com")
-                        .foregroundColor(.gray)
+                
+                Section(header: Text("Settings")) {
+                    Toggle(isOn: .constant(true)) {
+                        Text("Notifications")
+                    }
+                    Toggle(isOn: .constant(false)) {
+                        Text("Dark Mode")
+                    }
+                }
+                
+                Section(header: Text("About")) {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text("1.0.0")
+                            .foregroundColor(.gray)
+                    }
                 }
             }
+            .listStyle(PlainListStyle())
+            .navigationTitle("Settings")
             
-            Section(header: Text("Settings")) {
-                Toggle(isOn: .constant(true)) {
-                    Text("Notifications")
-                }
-                Toggle(isOn: .constant(false)) {
-                    Text("Dark Mode")
-                }
-            }
-            
-            Section(header: Text("About")) {
-                HStack {
-                    Text("Version")
-                    Spacer()
-                    Text("1.0.0")
-                        .foregroundColor(.gray)
-                }
-            }
+            Button("Sign Out", action: viewModel.signOutWithEmail)
+                .padding(.bottom, 20)
         }
-        .listStyle(PlainListStyle())
-        .navigationTitle("Settings")
     }
 }
 
 
-#Preview {
-    SettingView()
+struct SettingView_Previews: PreviewProvider {
+    static var previews: some View {
+        let viewModel = AuthenticationViewModel()
+        SettingView(viewModel: viewModel)
+    }
 }
