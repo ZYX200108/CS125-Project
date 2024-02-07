@@ -50,10 +50,8 @@ class AuthenticationViewModel: ObservableObject {
             try Auth.auth().signOut()
             DispatchQueue.main.async {
                 self.isUserAuthenticated = false
-                self.displayName = ""
-                self.email = ""
-                self.password = ""
             }
+            self.initialize()
         } catch let signOutError as NSError {
             print("Error signing out: %@", signOutError)
         }
@@ -84,6 +82,14 @@ class AuthenticationViewModel: ObservableObject {
         let changeRequest = authResult?.user.createProfileChangeRequest()
         changeRequest?.displayName = self.displayName
         changeRequest?.commitChanges { (error) in }
+    }
+    
+    func initialize() {
+        DispatchQueue.main.async {
+            self.displayName = ""
+            self.email = ""
+            self.password = ""
+        }
     }
     
     func signInWithApple() async {

@@ -74,6 +74,7 @@ struct AuthenticationView: View {
                     Text("Don't have an account yet?")
                     Button("Sign Up") {
                         signUpView = true
+                        self.viewModel.initialize()
                     }
                 }
                 .sheet(isPresented: $signUpView) {

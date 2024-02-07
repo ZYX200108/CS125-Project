@@ -21,6 +21,7 @@ struct SignUpView: View {
                     Text("Already have an account?")
                     Button("Log in") {
                         signUpView = false
+                        viewModel.initialize()
                     }
                 }
             }
