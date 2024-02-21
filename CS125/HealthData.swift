@@ -9,12 +9,15 @@ import Foundation
 import HealthKit
 import SwiftUI
 
-class HealthKitManager: ObservableObject{
-    let healthStore = HKHealthStore()
+
+struct HealthData {
+    var hourlyCalories: [Double]
+    var totalSteps: Int
+}
+
+class HealthKitManager: ObservableObject {
     
-//    init(){
-//        let steps =
-//    }
+    let healthStore = HKHealthStore()
     
     // Function to request authorization to access HealthKit data
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
@@ -27,7 +30,8 @@ class HealthKitManager: ObservableObject{
         let readTypes: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!,
-            HKObjectType.quantityType(forIdentifier: .stepCount)!
+            HKObjectType.quantityType(forIdentifier: .stepCount)!,
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!  // For sleep data
         ]
         
         healthStore.requestAuthorization(toShare: [], read: readTypes) { (success, error) in
@@ -36,84 +40,70 @@ class HealthKitManager: ObservableObject{
     }
     
     
-    func fetchWorkouts(completion: @escaping ([HKWorkout]?, Error?) -> Void) {
-        let calendar = NSCalendar.current
-        let now = Date()
-        guard let oneMonthAgo = calendar.date(byAdding: .month, value: -1, to: now) else { return }
+    func fetchHourlyCalories(completion: @escaping (HealthData) -> Void) {
+        let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+        let stepsType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+        var hourlyCalories = Array(repeating: 0.0, count: 24) // Initialize an array for 24 hours of data
+        var totalSteps = 0
+        let group = DispatchGroup() // Use a dispatch group to manage multiple asynchronous queries
         
-        // Date predicate to fetch workouts from the last month
-        let datePredicate = HKQuery.predicateForSamples(withStart: oneMonthAgo, end: now, options: .strictStartDate)
+        // Fetch hourly calories
+        for hour in 0..<24 {
+            group.enter() // Enter the group for each query
+            
+            let startHour = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date())!
+            let endHour = Calendar.current.date(bySettingHour: hour, minute: 59, second: 59, of: Date())!
+            let predicate = HKQuery.predicateForSamples(withStart: startHour, end: endHour, options: .strictStartDate)
+            
+            let calorieQuery = HKStatisticsQuery(quantityType: caloriesType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+                let calories = result?.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
+                hourlyCalories[hour] = calories
+                group.leave() // Leave the group once the query completes
+            }
+            healthStore.execute(calorieQuery)
+        }
         
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-        let query = HKSampleQuery(sampleType: HKObjectType.workoutType(), predicate: datePredicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { (query, results, error) in
-            guard let workouts = results as? [HKWorkout] else {
+        // Fetch total daily steps
+        group.enter() // Enter the group for the step count query
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: Date())!
+        let dailyPredicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        
+        let stepsQuery = HKStatisticsQuery(quantityType: stepsType, quantitySamplePredicate: dailyPredicate, options: .cumulativeSum) { _, result, _ in
+            let steps = Int(result?.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0)
+            totalSteps = steps
+            group.leave() // Leave the group once the query completes
+        }
+        healthStore.execute(stepsQuery)
+        
+        // Completion handler to return results
+        group.notify(queue: .main) { // Once all queries complete, this block will be called
+            let healthData = HealthData(hourlyCalories: hourlyCalories, totalSteps: totalSteps)
+            completion(healthData)
+        }
+    }
+    
+    // Helper function to fetch calories for a given time period
+    private func fetchCalories(for quantityType: HKQuantityType, predicate: NSPredicate, completion: @escaping (Double) -> Void) {
+        let query = HKStatisticsQuery(quantityType: quantityType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+            let calories = result?.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
+            completion(calories)
+        }
+        healthStore.execute(query)
+    }
+    
+    // Function to fetch sleep data
+    func fetchSleepAnalysis(completion: @escaping ([HKCategorySample]?, Error?) -> Void) {
+        let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+        let query = HKSampleQuery(sampleType: sleepType, predicate: nil, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { (query, results, error) in
+            guard let sleepData = results as? [HKCategorySample] else {
                 completion(nil, error)
                 return
             }
-            
-            // Process the retrieved workouts here
-            completion(workouts, nil)
+            completion(sleepData, nil)
         }
-        
         healthStore.execute(query)
-    }
-
-    
-    // Function to fetch steps and calories
-    func fetchStepsAndCalories(completion: @escaping (Double, Double) -> Void) {
-        let now = Date()
-        let startOfDay = Calendar.current.startOfDay(for: now)
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
-        
-        let stepsType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
-        let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
-        
-        let stepsQuery = HKStatisticsQuery(quantityType: stepsType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
-            let steps = result?.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
-            completion(steps, 0) // Temporary, will be updated with calories
-            print(steps)
-        }
-        
-        let caloriesQuery = HKStatisticsQuery(quantityType: caloriesType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
-            let calories = result?.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
-            completion(0, calories) // Temporary, will call the final completion
-            print(calories)
-        }
-        
-        healthStore.execute(stepsQuery)
-        healthStore.execute(caloriesQuery)
     }
 }
 
-//class ViewController: UIViewController {
-//    var healthKitManager: HealthKitManager!
-//    
-//    override func viewDidLoad() {
-//        super.viewDidLoad()
-//        
-//        healthKitManager = HealthKitManager()
-//        
-//        // Request HealthKit authorization first
-//        healthKitManager.requestAuthorization { [weak self] (authorized, error) in
-//            guard authorized else {
-//                print("HealthKit authorization denied!")
-//                if let error = error {
-//                    print("Error: \(error.localizedDescription)")
-//                }
-//                return
-//            }
-//            
-//            // Fetch workouts if authorized
-//            self?.healthKitManager.fetchWorkouts { (workouts, error) in
-//                guard let workouts = workouts else {
-//                    print("Error fetching workouts: \(error?.localizedDescription ?? "Unknown error")")
-//                    return
-//                }
-//                
-//                for workout in workouts {
-//                    print("Workout: \(workout.workoutActivityType), \(workout.startDate), \(workout.duration), \(workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0) kcal")
-//                }
-//            }
-//        }
-//    }
-//}

@@ -9,6 +9,8 @@ import SwiftUI
 import HealthKit
 
 struct HomeView: View {
+    @ObservedObject var healthKitManager = HealthKitManager()
+    @State private var healthData = HealthData(hourlyCalories: [], totalSteps: 0)
     var body: some View {
         @State var progress: CGFloat = 0.75 // Example progress, set to 75%
         @State var hourlyCaloriesBurned: [Double] = [0,0,0,0,0,0,
@@ -61,6 +63,38 @@ struct HomeView: View {
             }
             .padding()
             
+//            // Statistic Bar Graph
+//            VStack(alignment: .leading) {
+//                Text("Statistic")
+//                    .font(.headline)
+//                    .padding(.bottom, 5)
+//                
+//                // Calculating scale factor based on max calories
+//                let maxCalories = hourlyCaloriesBurned.max() ?? 0
+//                let maxHeight: Double = 100 // The max height you want for your tallest bar
+//                let scaleFactor = maxCalories > 0 ? maxHeight / maxCalories : 0
+//                
+//                // Creating the bar graph
+//                VStack {
+//                    HStack(alignment: .bottom, spacing: 0.5) {
+//                        ForEach(0..<hourlyCaloriesBurned.count, id: \.self) { index in
+//                            VStack {
+//                                // Create a bar for each hour
+//                                RoundedRectangle(cornerRadius: 4)
+//                                    .fill(hourlyCaloriesBurned[index] > 0 ? Color.orange : Color.clear)
+//                                    .frame(width: 12, height: max(CGFloat(hourlyCaloriesBurned[index]) * scaleFactor, 2))
+//                                    .padding(.bottom, 8)
+//                                // Add hour labels at the bottom
+//                                Text(index % 3 == 0 ? "\(index % 12 == 0 ? 12 : index % 12)\(index < 12 ? "\nAM" : "\nPM")" : " ")
+//                                    .font(.system(size: 6)) // Smaller font size to ensure it fits
+//                                    .frame(height: 20)
+//                            }
+//                        }
+//                    }
+//                }
+//                .frame(height: 120) // Set the height of the entire bar graph container
+//            }
+//            .padding(.horizontal)
             // Statistic Bar Graph
             VStack(alignment: .leading) {
                 Text("Statistic")
@@ -68,25 +102,23 @@ struct HomeView: View {
                     .padding(.bottom, 5)
                 
                 // Calculating scale factor based on max calories
-                let maxCalories = hourlyCaloriesBurned.max() ?? 0
+                let maxCalories = healthData.hourlyCalories.max() ?? 1 // Avoid division by zero
                 let maxHeight: Double = 100 // The max height you want for your tallest bar
                 let scaleFactor = maxCalories > 0 ? maxHeight / maxCalories : 0
                 
                 // Creating the bar graph
-                VStack {
-                    HStack(alignment: .bottom, spacing: 0.5) {
-                        ForEach(0..<hourlyCaloriesBurned.count, id: \.self) { index in
-                            VStack {
-                                // Create a bar for each hour
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(hourlyCaloriesBurned[index] > 0 ? Color.orange : Color.clear)
-                                    .frame(width: 12, height: max(CGFloat(hourlyCaloriesBurned[index]) * scaleFactor, 2))
-                                    .padding(.bottom, 8)
-                                // Add hour labels at the bottom
-                                Text(index % 3 == 0 ? "\(index % 12 == 0 ? 12 : index % 12)\(index < 12 ? "\nAM" : "\nPM")" : " ")
-                                    .font(.system(size: 6)) // Smaller font size to ensure it fits
-                                    .frame(height: 20)
-                            }
+                HStack(alignment: .bottom, spacing: 0.5) {
+                    ForEach(0..<healthData.hourlyCalories.count, id: \.self) { index in
+                        VStack {
+                            // Create a bar for each hour
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(healthData.hourlyCalories[index] > 0 ? Color.orange : Color.clear)
+                                .frame(width: 12, height: max(CGFloat(healthData.hourlyCalories[index]) * CGFloat(scaleFactor), 2))
+                                .padding(.bottom, 8)
+                            // Add hour labels at the bottom
+                            Text(index % 3 == 0 ? "\(index % 12 == 0 ? 12 : index % 12)\(index < 12 ? "\nAM" : "\nPM")" : " ")
+                                .font(.system(size: 6)) // Smaller font size to ensure it fits
+                                .frame(height: 20)
                         }
                     }
                 }
@@ -101,25 +133,15 @@ struct HomeView: View {
         .padding()
         .onAppear {
             // Request HealthKit authorization first
-            manager.requestAuthorization { authorized, error in
-                if let error = error {
-                    // Handle any errors here
-                    print("Authorization Error: \(error.localizedDescription)")
-                } else if authorized {
-                    // Fetch workouts only after authorization is granted
-                    manager.fetchWorkouts { (workouts, error) in
-                        if let error = error {
-                            // Handle any errors here
-                            print("Error fetching workouts: \(error.localizedDescription)")
-                        } else if let workouts = workouts {
-                            // Process the retrieved workouts here
-                            for workout in workouts {
-                                print("Workout: \(workout.workoutActivityType), \(workout.startDate), \(workout.duration), \(workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0) kcal")
-                            }
-                        }
+            healthKitManager.requestAuthorization { authorized, error in
+                if authorized {
+                    // Fetch hourly calories and steps
+                    healthKitManager.fetchHourlyCalories { data in
+                        self.healthData = data
                     }
                 } else {
-                    print("HealthKit authorization was not granted.")
+                    // Handle the error or lack of authorization
+                    print("Authorization Error: \(error?.localizedDescription ?? "Unknown error")")
                 }
             }
         }
