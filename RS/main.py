@@ -2,6 +2,8 @@ from RSV1 import get_receipts
 from ReadData import read_data
 from DataClean import tokenize_words, clean_data
 from BuildTFIDFModel import build_customize_tfidf_model, build_general_tfidf_model, update_customize_tfidf_model
+from flask import Flask, request, jsonify
+app = Flask(__name__)
 
 def main(Ingredients, Allegerie, snacks=0):
     string = ""
@@ -22,7 +24,7 @@ def main(Ingredients, Allegerie, snacks=0):
             string += "\n"
     return string
 
-def daliyNutritions(CurrentWeights, TargetWeights, time, sex):
+def dailyNutritions(CurrentWeights, TargetWeights, time, sex):
     difference = CurrentWeights - TargetWeights
     daliyCal = difference * 3500 / time
     breakfastCal = round(daliyCal * 0.25)
@@ -48,8 +50,23 @@ def SysUse(file_path):
     clean_data()
     build_general_tfidf_model()
 
-def firstAccess(Allegerie):
+@app.route('/firstAccess', methods=['POST'])
+def first_access():
+    data = request.json
+    CurrentWeights = data.get('CurrentWeights')
+    TargetWeights = data.get('TargetWeights')
+    time = data.get('time')
+    sex = data.get('sex')
+    Allegerie = data.get('Allegerie')
+
+    nutritions = dailyNutritions(CurrentWeights, TargetWeights, time, sex)
     build_customize_tfidf_model(Allegerie)
+
+
+
+# def first_access(CurrentWeights, TargetWeights, time, sex, Allegerie):
+#     nutritions = daliyNutritions(CurrentWeights, TargetWeights, time, sex)
+#     build_customize_tfidf_model(Allegerie)
 
 Allegeries = ['peanut', 'milk', 'wheat', 'shellfish']
 Ingredients = ['chicken', 'onion', 'garlic', 'tomato', 'rice']
