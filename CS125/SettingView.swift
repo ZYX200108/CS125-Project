@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingView: View {
-    @ObservedObject public var viewModel: AuthenticationViewModel
+    @ObservedObject public var authViewModel: AuthenticationViewModel
     
     var body: some View {
         VStack {
@@ -17,13 +17,13 @@ struct SettingView: View {
                     HStack {
                         Text("Username")
                         Spacer()
-                        Text(viewModel.displayName)
+                        Text(authViewModel.displayName)
                             .foregroundColor(.gray)
                     }
                     HStack {
                         Text("Email")
                         Spacer()
-                        Text(viewModel.email)
+                        Text(authViewModel.email)
                             .foregroundColor(.gray)
                     }
                 }
@@ -49,7 +49,7 @@ struct SettingView: View {
             .listStyle(PlainListStyle())
             .navigationTitle("Settings")
             
-            Button("Sign Out", action: viewModel.signOutWithEmail)
+            Button("Sign Out", action: authViewModel.signOutWithEmail)
                 .padding(.bottom, 20)
         }
     }
@@ -58,7 +58,7 @@ struct SettingView: View {
 
 struct SettingView_Previews: PreviewProvider {
     static var previews: some View {
-        let viewModel = AuthenticationViewModel()
-        SettingView(viewModel: viewModel)
+        let authViewModel = AuthenticationViewModel()
+        SettingView(authViewModel: authViewModel)
     }
 }

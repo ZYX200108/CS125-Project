@@ -8,14 +8,14 @@
 import SwiftUI
 
 struct MainView: View {
-    @StateObject public var viewModel = AuthenticationViewModel()
+    @StateObject public var authViewModel = AuthenticationViewModel()
     
     var body: some View {
         Group {
-            if viewModel.isUserAuthenticated {
-                ContentView(viewModel: viewModel)
+            if authViewModel.isUserAuthenticated {
+                ContentView(authViewModel: authViewModel)
             } else {
-                AuthenticationView(viewModel: viewModel)
+                AuthenticationView(authViewModel: authViewModel)
             }
         }
     }

@@ -16,6 +16,10 @@ class UserDataCollectionViewModel: ObservableObject {
     @Published var weight: Int = 120
     @Published var targetWeight: Int = 120
     @Published var height: Int = 180
+    @Published var sex: String = "Male"
+    @Published var targetYear: Int = 2024
+    @Published var targetMonth: Int = 11
+    @Published var targetDay: Int = 11
         
     func addAllergy(_ allergy: String) {
         foodAllergies.append(allergy)
@@ -25,7 +29,7 @@ class UserDataCollectionViewModel: ObservableObject {
         foodAllergies.remove(atOffsets: offsets)
     }
     
-    func saveUserData(userName: String) async {
+    func saveUserData(userName: String, email: String) async {
         do {
           let ref = try await db.collection("users").addDocument(data: [
             "name": userName,
@@ -33,7 +37,10 @@ class UserDataCollectionViewModel: ObservableObject {
             "weight": weight,
             "targetWeight": targetWeight,
             "height": height,
-            "allergies": foodAllergies
+            "allergies": foodAllergies,
+            "email": email,
+            "sex": sex,
+            "target Date": [targetYear, targetMonth, targetDay]
           ])
           print("Document added with ID: \(ref.documentID)")
         } catch {

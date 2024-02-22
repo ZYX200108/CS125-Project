@@ -9,7 +9,7 @@ import SwiftUI
 import _AuthenticationServices_SwiftUI
 
 struct AuthenticationView: View {
-    @ObservedObject public var viewModel: AuthenticationViewModel
+    @ObservedObject public var authViewModel: AuthenticationViewModel
     @State private var signUpView: Bool = false
 
     var body: some View {
@@ -28,7 +28,7 @@ struct AuthenticationView: View {
                 HStack {
                     Image(systemName: "envelope")
                         .frame(width: 24, height: 24)
-                    TextField("Email", text: $viewModel.email)
+                    TextField("Email", text: $authViewModel.email)
                         .autocapitalization(.none)
                         .autocorrectionDisabled()
                 }
@@ -37,13 +37,13 @@ struct AuthenticationView: View {
                 HStack {
                     Image(systemName: "key.horizontal")
                         .frame(width: 24, height: 24)
-                    SecureField("Password", text: $viewModel.password)
+                    SecureField("Password", text: $authViewModel.password)
                 }
                 .padding(.bottom, 1)
                 
                 Button("Log in") {
                     Task {
-                        await viewModel.signInWithEmail()
+                        await authViewModel.signInWithEmail()
                     }
                 }
                 .padding()
@@ -74,11 +74,11 @@ struct AuthenticationView: View {
                     Text("Don't have an account yet?")
                     Button("Sign Up") {
                         signUpView = true
-                        self.viewModel.initialize()
+                        self.authViewModel.initialize()
                     }
                 }
                 .sheet(isPresented: $signUpView) {
-                    SignUpView(viewModel: viewModel, signUpView: $signUpView)
+                    SignUpView(authViewModel: authViewModel, signUpView: $signUpView)
                 }
             }
         }
@@ -87,8 +87,8 @@ struct AuthenticationView: View {
 
 struct AuthenticationView_Previews: PreviewProvider {
     static var previews: some View {
-        let viewModel = AuthenticationViewModel()
-        AuthenticationView(viewModel: viewModel)
+        let authViewModel = AuthenticationViewModel()
+        AuthenticationView(authViewModel: authViewModel)
     }
 }
 
