@@ -7,82 +7,193 @@
 
 import SwiftUI
 
-//struct AddActivityView: View {
-//    var body: some View {
-//        Text("Hello, World!")
-//    }
-//}
-import UIKit
+struct AddFoodView: View {
+    @State private var carbs: Double = 0
+    @State private var protein: Double = 0
+    @State private var veggies: Double = 0
+    @State private var showingPicker = false
+    @State private var pickerValue: Double = 0
+    @State private var activeNutrient: NutrientType?
 
-class AddFoodView: UIViewController {
+    var body: some View {
+        VStack(spacing: 30) {
+            NutritionRingView(carbs: carbs, protein: protein, veggies: veggies)
+                .frame(width: 200, height: 200)
+                .padding(.bottom, 20)
+            
+            LegendView()
 
-    let carbsTextField = UITextField()
-    let proteinTextField = UITextField()
-    let veggiesTextField = UITextField()
-    let calculateButton = UIButton(type: .system)
-    let resultLabel = UILabel()
+            // Your existing NutrientInputButtons and sheet
+            HStack {
+                NutrientInputButton(nutrient: "Carbohydrate", systemImage: "fork.knife", currentValue: carbs) {
+                    self.activeNutrient = .carbs
+                    self.pickerValue = carbs
+                    self.showingPicker = true
+                }.font(.system(size: 15))
+                NutrientInputButton(nutrient: "Protein", systemImage: "fish.fill", currentValue: protein) {
+                    self.activeNutrient = .protein
+                    self.pickerValue = protein
+                    self.showingPicker = true
+                }.font(.system(size: 15))
+                NutrientInputButton(nutrient: "Vegetables", systemImage: "leaf.fill", currentValue: veggies) {
+                    self.activeNutrient = .veggies
+                    self.pickerValue = veggies
+                    self.showingPicker = true
+                }.font(.system(size: 15))
+            }
+            .padding(.top, 50)
+            .sheet(isPresented: $showingPicker) {
+                NumberPickerView(selectedValue: $pickerValue) {
+                    if let activeNutrient = activeNutrient {
+                        switch activeNutrient {
+                        case .carbs:
+                            carbs = pickerValue
+                        case .protein:
+                            protein = pickerValue
+                        case .veggies:
+                            veggies = pickerValue
+                        }
+                    }
+                    self.showingPicker = false
+                }
+            }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupViews()
-        layoutViews()
-    }
-
-    private func setupViews() {
-        // Configure text fields
-        [carbsTextField, proteinTextField, veggiesTextField].forEach { textField in
-            textField.borderStyle = .roundedRect
-            textField.keyboardType = .decimalPad
+            Text("Total Calories: \(calculateTotalCalories(), specifier: "%.2f")")
+                .padding()
         }
-
-        // Configure button
-        calculateButton.setTitle("Calculate Calories", for: .normal)
-        calculateButton.addTarget(self, action: #selector(calculateCalories), for: .touchUpInside)
-
-        // Configure label
-        resultLabel.text = "Calories: 0"
-        resultLabel.textAlignment = .center
-
-        // Add subviews
-        view.addSubview(carbsTextField)
-        view.addSubview(proteinTextField)
-        view.addSubview(veggiesTextField)
-        view.addSubview(calculateButton)
-        view.addSubview(resultLabel)
+        .padding()
     }
 
-    private func layoutViews() {
-        // Layout your views programmatically or using Auto Layout
+    private func calculateTotalCalories() -> Double {
+        (carbs + protein + veggies) * 4 // Simplified calculation for the example
     }
+}
 
-    @objc func calculateCalories() {
-        guard let carbs = Double(carbsTextField.text ?? ""),
-              let protein = Double(proteinTextField.text ?? ""),
-              let veggies = Double(veggiesTextField.text ?? "") else {
-            // Handle invalid input
-            return
+struct NutritionRingView: View {
+    var carbs: Double
+    var protein: Double
+    var veggies: Double
+
+    private var total: Double { carbs + protein + veggies }
+
+    var body: some View {
+        ZStack {
+            if total == 0 {
+                // Display a grey ring if there are no inputs
+                Circle()
+                    .stroke(Color.gray, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                    .overlay(
+                        Text("No Data")
+                            .foregroundColor(.gray)
+                            .font(.caption)
+                    )
+            } else {
+                // Normal ring segments showing nutritional balance
+                RingSegment(color: .green, startPercentage: 0, endPercentage: veggies / max(total, 1), label: "\(Int(veggies / max(total, 1) * 100))%")
+                RingSegment(color: .red, startPercentage: veggies / max(total, 1), endPercentage: (veggies + carbs) / max(total, 1), label: "\(Int(carbs / max(total, 1) * 100))%")
+                RingSegment(color: .blue, startPercentage: (veggies + carbs) / max(total, 1), endPercentage: 1, label: "\(Int(protein / max(total, 1) * 100))%")
+            }
         }
-
-        let foodIntake = FoodIntake(carbs: carbs, protein: protein, veggies: veggies)
-        let calories = foodIntake.totalCalories()
-        resultLabel.text = "Calories: \(calories)"
     }
 }
 
-struct FoodIntake {
-    var carbs: Double // in grams
-    var protein: Double // in grams
-    var veggies: Double // in grams
+struct RingSegment: View {
+    var color: Color
+    var startPercentage: Double
+    var endPercentage: Double
+    var label: String
 
-    func totalCalories() -> Double {
-        let carbCalories = carbs * 4
-        let proteinCalories = protein * 4
-        let veggieCalories = veggies * 2
-        return carbCalories + proteinCalories + veggieCalories
+    var body: some View {
+        ZStack {
+            Circle()
+                .trim(from: CGFloat(startPercentage), to: CGFloat(endPercentage))
+                .stroke(color, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                .rotationEffect(Angle(degrees: -90))
+                .overlay(
+                    GeometryReader { geometry in
+                        Text(label)
+                            .font(.caption)
+                            .position(x: geometry.size.width / 2, y: 25) // Adjust position as needed
+                            .foregroundColor(.white)
+                    }
+                )
+        }
+    }
+}
+
+struct LegendView: View {
+    var body: some View {
+        HStack {
+            LegendColor(color: .green, text: "Vegetables")
+            LegendColor(color: .red, text: "Carbohydrate")
+            LegendColor(color: .blue, text: "Protein")
+        }
+    }
+}
+
+struct LegendColor: View {
+    var color: Color
+    var text: String
+    
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(color)
+                .frame(width: 10, height: 10)
+            Text(text)
+                .font(.caption)
+        }
     }
 }
 
 
-#Preview {
-    AddFoodView()
+struct NutrientInputButton: View {
+    var nutrient: String
+    var systemImage: String
+    var currentValue: Double
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack {
+                Image(systemName: systemImage) // Using system images
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 50, height: 50)
+                    .foregroundColor(.black) // You can change the color as needed
+                Text("\(nutrient): \(currentValue, specifier: "%.0f")g")
+            }
+        }
+    }
 }
+
+struct NumberPickerView: View {
+    @Binding var selectedValue: Double
+    var doneAction: () -> Void
+
+    var body: some View {
+        VStack {
+            Picker("Value", selection: $selectedValue) {
+                ForEach(0..<100) { value in
+                    Text("\(value)").tag(Double(value))
+                }
+            }
+            .pickerStyle(WheelPickerStyle())
+
+            Button("Done") {
+                doneAction()
+            }
+        }
+    }
+}
+
+enum NutrientType {
+    case carbs, protein, veggies
+}
+
+struct AddFoodView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddFoodView()
+    }
+}
+
