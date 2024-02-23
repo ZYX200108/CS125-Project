@@ -9,48 +9,54 @@ import SwiftUI
 
 struct SettingView: View {
     @ObservedObject public var authViewModel: AuthenticationViewModel
+    @State var isProfileViewActive = false
     
     var body: some View {
-        VStack {
-            List {
-                Section(header: Text("Account")) {
-                    HStack {
-                        Text("Username")
-                        Spacer()
-                        Text(authViewModel.displayName)
-                            .foregroundColor(.gray)
+        NavigationView {
+            VStack {
+                List {
+                    Section(header: Text("Account")) {
+                        HStack {
+                            Text("Username")
+                            Spacer()
+                            Text(authViewModel.displayName)
+                                .foregroundColor(.gray)
+                        }
+                        HStack {
+                            Text("Email")
+                            Spacer()
+                            Text(authViewModel.email)
+                                .foregroundColor(.gray)
+                        }
+                        NavigationLink(destination: ProfileView(authViewModel: authViewModel)) {
+                            Text("Profile")
+                        }
                     }
-                    HStack {
-                        Text("Email")
-                        Spacer()
-                        Text(authViewModel.email)
-                            .foregroundColor(.gray)
+                    
+                    Section(header: Text("Settings")) {
+                        Toggle(isOn: .constant(true)) {
+                            Text("Notifications")
+                        }
+                        Toggle(isOn: .constant(false)) {
+                            Text("Dark Mode")
+                        }
+                    }
+                    
+                    Section(header: Text("About")) {
+                        HStack {
+                            Text("Version")
+                            Spacer()
+                            Text("1.0.0")
+                                .foregroundColor(.gray)
+                        }
                     }
                 }
+                .listStyle(PlainListStyle())
+                .navigationTitle("Settings")
                 
-                Section(header: Text("Settings")) {
-                    Toggle(isOn: .constant(true)) {
-                        Text("Notifications")
-                    }
-                    Toggle(isOn: .constant(false)) {
-                        Text("Dark Mode")
-                    }
-                }
-                
-                Section(header: Text("About")) {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text("1.0.0")
-                            .foregroundColor(.gray)
-                    }
-                }
+                Button("Sign Out", action: authViewModel.signOutWithEmail)
+                    .padding(.bottom, 20)
             }
-            .listStyle(PlainListStyle())
-            .navigationTitle("Settings")
-            
-            Button("Sign Out", action: authViewModel.signOutWithEmail)
-                .padding(.bottom, 20)
         }
     }
 }

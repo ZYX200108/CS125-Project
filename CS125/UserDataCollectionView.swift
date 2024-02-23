@@ -59,10 +59,10 @@ struct UserDataCollectionView: View {
                     .padding(.vertical, 5)
                     
                     DateView(title:"Target Date", years: yearRange, months: monthRange, dataViewModel: dataViewModel)
-                    SectionView(title: "Age", range: ageRange, selection: $dataViewModel.age)
-                    SectionView(title: "Height", range: heightRange, selection: $dataViewModel.height)
-                    SectionView(title: "Current Weight", range: weightRange, selection: $dataViewModel.weight)
-                    SectionView(title: "Target Weight", range: weightRange, selection: $dataViewModel.targetWeight)
+                    dataChoiceView(title: "Age", range: ageRange, selection: $dataViewModel.age)
+                    dataChoiceView(title: "Height", range: heightRange, selection: $dataViewModel.height)
+                    dataChoiceView(title: "Current Weight", range: weightRange, selection: $dataViewModel.weight)
+                    dataChoiceView(title: "Target Weight", range: weightRange, selection: $dataViewModel.targetWeight)
                 }
                 
                 Text("Food Allergies")
@@ -148,7 +148,7 @@ struct UserDataCollectionView: View {
     }
 }
 
-struct SectionView: View {
+struct dataChoiceView: View {
     let title: String
     let range: ClosedRange<Int>
     @Binding var selection: Int
