@@ -48,12 +48,18 @@ struct SettingView: View {
                     }
                     
                     Section(header: Text("Settings")) {
-                        Toggle(isOn: .constant(true)) {
+                        Toggle(isOn: $notificationsEnabled) {
                             Text("Notifications")
                         }
-                        Toggle(isOn: .constant(false)) {
-                            Text("Dark Mode")
+                        .onChange(of: notificationsEnabled) {
+                            if notificationsEnabled {
+                                showCustomAlert()
+                            }
                         }
+                        Toggle("Dark Mode", isOn: Binding(
+                            get: { self.themePreference == .dark },
+                            set: { newValue in self.themePreference = newValue ? .dark : .light }
+                        ))
                     }
                     
                     Section(header: Text("About")) {
@@ -70,29 +76,6 @@ struct SettingView: View {
                 
                 Button("Sign Out", action: authViewModel.signOutWithEmail)
                     .padding(.bottom, 20)
-                Section(header: Text("Settings")) {
-                    Toggle(isOn: $notificationsEnabled) {
-                        Text("Notifications")
-                    }
-                    .onChange(of: notificationsEnabled) {
-                        if notificationsEnabled {
-                            showCustomAlert()
-                        }
-                    }
-                    Toggle("Dark Mode", isOn: Binding(
-                        get: { self.themePreference == .dark },
-                        set: { newValue in self.themePreference = newValue ? .dark : .light }
-                    ))
-                }
-                
-                Section(header: Text("About")) {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text("1.0.0")
-                            .foregroundColor(.gray)
-                    }
-                }
             }
         }
         .alert(isPresented: $showingSettingsAlert) {

@@ -21,9 +21,6 @@
 		1BE49FEE2B60B245001C3CD8 /* CS125Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE49FED2B60B245001C3CD8 /* CS125Tests.swift */; };
 		1BE49FF82B60B245001C3CD8 /* CS125UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE49FF72B60B245001C3CD8 /* CS125UITests.swift */; };
 		1BE49FFA2B60B245001C3CD8 /* CS125UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE49FF92B60B245001C3CD8 /* CS125UITestsLaunchTests.swift */; };
-		1BE7B4072B88192400A84E25 /* DataCollectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE7B4052B88192400A84E25 /* DataCollectionViewModel.swift */; };
-		1BE7B4082B88192400A84E25 /* UserDataCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE7B4062B88192400A84E25 /* UserDataCollectionView.swift */; };
-		1BE7B40A2B88197C00A84E25 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 1BE7B4092B88197C00A84E25 /* FirebaseFirestore */; };
 		E70E9AFC2B72DC3800B7BE96 /* RecommendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70E9AFB2B72DC3800B7BE96 /* RecommendView.swift */; };
 		E70E9AFE2B72E5B000B7BE96 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E70E9AFD2B72E5B000B7BE96 /* GoogleService-Info.plist */; };
 		E70E9B012B72E7B900B7BE96 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = E70E9B002B72E7B900B7BE96 /* FirebaseAnalytics */; };
@@ -33,6 +30,8 @@
 		E70E9B102B73405100B7BE96 /* AuthenticationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70E9B0F2B73405100B7BE96 /* AuthenticationViewModel.swift */; };
 		E70E9B122B73439D00B7BE96 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70E9B112B73439D00B7BE96 /* MainView.swift */; };
 		E70E9B142B742B5900B7BE96 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70E9B132B742B5900B7BE96 /* SignUpView.swift */; };
+		E75A95BD2B89330A0056F1DA /* UserProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E75A95BB2B89330A0056F1DA /* UserProfileViewModel.swift */; };
+		E75A95BE2B89330A0056F1DA /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E75A95BC2B89330A0056F1DA /* ProfileView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +79,8 @@
 		E70E9B0F2B73405100B7BE96 /* AuthenticationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationViewModel.swift; sourceTree = "<group>"; };
 		E70E9B112B73439D00B7BE96 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		E70E9B132B742B5900B7BE96 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
+		E75A95BB2B89330A0056F1DA /* UserProfileViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserProfileViewModel.swift; sourceTree = "<group>"; };
+		E75A95BC2B89330A0056F1DA /* ProfileView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +141,8 @@
 				1B5E83CB2B71BAC300ADD5B3 /* CS125Release.entitlements */,
 				1BE49FDC2B60B243001C3CD8 /* CS125App.swift */,
 				E70E9B112B73439D00B7BE96 /* MainView.swift */,
+				E75A95BC2B89330A0056F1DA /* ProfileView.swift */,
+				E75A95BB2B89330A0056F1DA /* UserProfileViewModel.swift */,
 				1705020C2B881B1F007318D4 /* DataCollectionViewModel.swift */,
 				1705020D2B881B1F007318D4 /* UserDataCollectionView.swift */,
 				1BE49FDE2B60B243001C3CD8 /* ContentView.swift */,
@@ -335,9 +338,11 @@
 				1B5E83D12B71BF6D00ADD5B3 /* HomeView.swift in Sources */,
 				1B5E83D52B71C42300ADD5B3 /* HealthData.swift in Sources */,
 				1705020E2B881B1F007318D4 /* DataCollectionViewModel.swift in Sources */,
+				E75A95BD2B89330A0056F1DA /* UserProfileViewModel.swift in Sources */,
 				1705020F2B881B1F007318D4 /* UserDataCollectionView.swift in Sources */,
 				E70E9AFC2B72DC3800B7BE96 /* RecommendView.swift in Sources */,
 				E70E9B122B73439D00B7BE96 /* MainView.swift in Sources */,
+				E75A95BE2B89330A0056F1DA /* ProfileView.swift in Sources */,
 				1B5E83D32B71C07000ADD5B3 /* SettingView.swift in Sources */,
 				1BE49FDF2B60B243001C3CD8 /* ContentView.swift in Sources */,
 				1B5E83D92B71F94B00ADD5B3 /* AddFoodView.swift in Sources */,
