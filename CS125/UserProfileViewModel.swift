@@ -23,6 +23,14 @@ class UserProfileViewModel: ObservableObject {
     
     private var docID: String = ""
     
+    func addAllergy(_ allergy: String) {
+        foodAllergies.append(allergy)
+    }
+    
+    func removeAllergy(at offsets: IndexSet) {
+        foodAllergies.remove(atOffsets: offsets)
+    }
+    
     func updateUserData() {
         let documentRef = db.collection("users").document(docID)
         let data = [

@@ -26,10 +26,6 @@ struct UserDataCollectionView: View {
             .font(.largeTitle)
         ScrollView {
             VStack {
-//                Text("Data Collection")
-//                    .fontWeight(.bold)
-//                    .font(.largeTitle)
-                
                 VStack(alignment: .leading) {
                     VStack(alignment: .leading) {
                         Text("Sex")
