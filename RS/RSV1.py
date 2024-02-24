@@ -23,20 +23,37 @@ def parse_and_format_steps(recipe_steps_str):
     
     return formatted_steps
 
-def recommend_top_5_receipts(ingredients, value=1):
+def recommend_top_5_receipts(file_path, ingredients, currentNutributionDict, value=1):
     general_customize = {0: 'General', 1: 'CustomizeMeal', 2: 'CustomizeSnack'}
     tfidf_model = load('TFIDF_{}_model.joblib'.format(general_customize[value]))
     tfidf_recipe = normalize(load('tfidf_{}_recipe.joblib'.format(general_customize[value])))
-
     enocde_ingredients = normalize(tfidf_model.transform([tokenize_words(ingredients)]))
     Recommendations = np.array(list(cosine_similarity(enocde_ingredients, tfidf_recipe)[0]))
-    Top_5 = Recommendations.argsort()[-5:][::-1]
-    return Top_5
-
-def get_receipts(file_path, ingredients, value=1): # value=1 means consider allergies, value=0 means not consider allergies
+    Top_30 = Recommendations.argsort()[-30:][::-1]
     df = Read_data(file_path)
-    Top_5 = recommend_top_5_receipts(ingredients, value)
-    receipts = df.iloc[Top_5]
+    df['Calories'] = pd.to_numeric(df['Calories'], errors='coerce')
+    df['FatContent'] = pd.to_numeric(df['FatContent'], errors='coerce')
+    df['CholesterolContent'] = pd.to_numeric(df['CholesterolContent'], errors='coerce')
+    df['SodiumContent'] = pd.to_numeric(df['SodiumContent'], errors='coerce')
+    df['CarbohydrateContent'] = pd.to_numeric(df['CarbohydrateContent'], errors='coerce')
+    df['FiberContent'] = pd.to_numeric(df['FiberContent'], errors='coerce')
+    df['ProteinContent'] = pd.to_numeric(df['ProteinContent'], errors='coerce')
+    df['SugarContent'] = pd.to_numeric(df['SugarContent'], errors='coerce')
+    receipts = df.iloc[Top_30]
+    receipts = receipts[
+        (receipts["Calories"] <= currentNutributionDict['daliyCal']) &
+        (receipts["FatContent"] <= currentNutributionDict['fat']) &
+        (receipts["CholesterolContent"] <= currentNutributionDict['cholesterol']) &
+        (receipts["SodiumContent"] <= currentNutributionDict['sodium']) &
+        (receipts["CarbohydrateContent"] <= currentNutributionDict['carbs']) &
+        (receipts["FiberContent"] <= currentNutributionDict['fiber']) &
+        (receipts["ProteinContent"] <= currentNutributionDict['protein']) &
+        (receipts["SugarContent"] <= currentNutributionDict['sugar'])
+    ]   
+    return receipts[:5]
+
+def get_receipts(file_path, ingredients, currentNutributionDict, value=1): # value=1 means consider allergies, value=0 means not consider allergies
+    receipts = recommend_top_5_receipts(file_path, ingredients, currentNutributionDict, value)
     receipts_info = []
     for i in range(5):
         recei = {}

@@ -34,6 +34,7 @@ def clean_data():
     df.to_pickle("cleaned_data.pkl")
 
 def tokenize_words(words):
+    # Stemming and Lemmatization
     words_to_remove = ['salt', 'sugar', 'pepper', 'fresh']
     stemmer = nltk.stem.porter.PorterStemmer()
     lemmatizer = nltk.stem.WordNetLemmatizer()

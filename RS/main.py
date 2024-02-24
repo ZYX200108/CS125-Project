@@ -1,21 +1,25 @@
+from datetime import datetime
 from RSV1 import get_receipts
 from ReadData import read_data
 from DataClean import tokenize_words, clean_data
 from BuildTFIDFModel import build_customize_tfidf_model, build_general_tfidf_model, update_customize_tfidf_model
-from flask import Flask, request, jsonify
-app = Flask(__name__)
+# from firebase_functions import firestore_fn, https_fn
+# from firebase_admin import initialize_app, firestore
+# import google.cloud.firestore
 
-def main(Ingredients, Allegerie, snacks=0):
+# app = initialize_app()
+
+def recommend_function(Ingredients, Allegerie, currentNutributionDict, snacks=0):
     string = ""
     if bool(set(tokenize_words(Ingredients).split(' ')).intersection(set(tokenize_words(Allegerie).split(' ')))):
         string = "Warning: The ingredients contain allergens"
     else:
         if not snacks:
-            receipts = get_receipts(r"cleaned_data_with_allegery_meal.pkl", Ingredients, 1)
+            receipts = get_receipts(r"cleaned_data_with_allegery_meal.pkl", Ingredients, currentNutributionDict, 1)
         else:
-            receipts = get_receipts(r"cleaned_data_with_allegery_snack.pkl", Ingredients, 2)
+            receipts = get_receipts(r"cleaned_data_with_allegery_snack.pkl", Ingredients, currentNutributionDict, 2)
         for index, i in enumerate(receipts):
-            string += f"Receipts {index + 1}:\n"
+            string += f"Receipt {index + 1}:\n"
             for j in i.keys():
                 if j == 'Steps':
                     string += f"{j}:\n{i[j]}\n"
@@ -24,13 +28,39 @@ def main(Ingredients, Allegerie, snacks=0):
             string += "\n"
     return string
 
-def dailyNutritions(CurrentWeights, TargetWeights, time, sex):
-    difference = CurrentWeights - TargetWeights
-    daliyCal = difference * 3500 / time
-    breakfastCal = round(daliyCal * 0.25)
-    lunchCal = round(daliyCal * 0.40)
-    dinnerCal = round(daliyCal * 0.35)
-    daliyCal = breakfastCal + lunchCal + dinnerCal
+def calculate_max_daily_calories(height_cm, current_weight_lbs, target_weight_lbs, sex, age, days, activity_level='not knonwn'):
+    current_weight_kg = current_weight_lbs / 2.20462
+    target_weight_kg = target_weight_lbs / 2.20462
+
+    if sex.lower() == 'm':
+        BMR = 88.362 + (13.397 * current_weight_kg) + (4.799 * height_cm) - (5.677 * age)
+    else:
+        BMR = 447.593 + (9.247 * current_weight_kg) + (3.098 * height_cm) - (4.330 * age)
+
+    if activity_level == 'sedentary':
+        adjusted_BMR = BMR * 1.3
+    elif activity_level == 'lightly active':
+        adjusted_BMR = BMR * 1.575
+    elif activity_level == 'moderately active':
+        adjusted_BMR = BMR * 1.65
+    elif activity_level == 'very active':
+        adjusted_BMR = BMR * 1.725
+    else:
+        adjusted_BMR = BMR * 1.2
+    
+    total_deficit_lbs = current_weight_kg - target_weight_kg 
+    total_caloric_deficit = total_deficit_lbs * 3500
+    
+    daily_caloric_deficit = total_caloric_deficit / days
+    max_daily_calories = adjusted_BMR - daily_caloric_deficit
+    
+    return max_daily_calories
+
+def dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age):
+    future_date = datetime.strptime(time, "%Y/%m/%d")
+    today_date = datetime.now()
+    days = (future_date - today_date).days
+    daliyCal = calculate_max_daily_calories(Height, CurrentWeights, TargetWeights, sex, age, days)
     fat_max = daliyCal * 0.30 / 9
     cholesterol_max = 300
     sodium_max = 2300
@@ -42,33 +72,40 @@ def dailyNutritions(CurrentWeights, TargetWeights, time, sex):
     protein = CurrentWeights * 0.8
     sugar_max = daliyCal * 0.10 / 4  # 1 gram of sugar = 4 calories
     
-    dictionary = {'daliyCal': daliyCal, 'fat_max': fat_max, 'cholesterol_max': cholesterol_max, 'sodium_max': sodium_max, 'carbs_max': carbs_max, 'fiber_recommendation': fiber_recommendation, 'protein': protein, 'sugar_max': sugar_max}
-    return dictionary
+    dailyNutritionLimitationDict = {'daliyCal': round(daliyCal, 2), 'fat': round(fat_max, 2), 'cholesterol': cholesterol_max, 'sodium': sodium_max, 'carbs': round(carbs_max, 2), 'fiber': fiber_recommendation, 'protein': protein, 'sugar': round(sugar_max, 2)}
+    return dailyNutritionLimitationDict
 
 def SysUse(file_path):
     read_data(file_path=file_path)
     clean_data()
     build_general_tfidf_model()
 
-@app.route('/firstAccess', methods=['POST'])
-def first_access():
-    data = request.json
-    CurrentWeights = data.get('CurrentWeights')
-    TargetWeights = data.get('TargetWeights')
-    time = data.get('time')
-    sex = data.get('sex')
-    Allegerie = data.get('Allegerie')
+# @app.route('/firstAccess', methods=['POST'])
+# def first_access():
+#     data = request.json
+#     CurrentWeights = data.get('CurrentWeights')
+#     TargetWeights = data.get('TargetWeights')
+#     time = data.get('time')
+#     sex = data.get('sex')
+#     Allegerie = data.get('Allegerie')
 
-    nutritions = dailyNutritions(CurrentWeights, TargetWeights, time, sex)
-    build_customize_tfidf_model(Allegerie)
-
-
-
-# def first_access(CurrentWeights, TargetWeights, time, sex, Allegerie):
-#     nutritions = daliyNutritions(CurrentWeights, TargetWeights, time, sex)
+#     nutritions = dailyNutritions(CurrentWeights, TargetWeights, time, sex)
 #     build_customize_tfidf_model(Allegerie)
 
-Allegeries = ['peanut', 'milk', 'wheat', 'shellfish']
-Ingredients = ['chicken', 'onion', 'garlic', 'tomato', 'rice']
-receipts = main(Ingredients, Allegeries)
-print(receipts)
+
+
+def first_access(Height, CurrentWeights, TargetWeights, time, sex, age, Allegerie):
+    dailyNutritionLimitationDict = dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age)
+    build_customize_tfidf_model(Allegerie)
+    return dailyNutritionLimitationDict
+
+# #Sample User
+# Height = 165 # cm
+# CurrentWeights = 198 # pounds
+# TargetWeights = 154 # pounds
+# Sex = 'F'
+# Target_date = '2024/06/15'
+# Allegeries = ['peanut', 'milk', 'wheat', 'shellfish']
+# Ingredients = ['chicken', 'onion', 'garlic', 'tomato', 'rice']
+# receipts = main(Ingredients, Allegeries)
+# print(receipts)
