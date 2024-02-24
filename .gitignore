@@ -1,2 +1,4 @@
 *.pkl
 *.joblib
+*.csv
+*.pyc
