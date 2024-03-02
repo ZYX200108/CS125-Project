@@ -75,6 +75,10 @@ def build_customize_tfidf_model(allegeries):
 
     df_meal = df[~df['RecipeCategory'].apply(lambda x: x in categories)]
     df_snack = df[df['RecipeCategory'].apply(lambda x: x in categories)]
+    df_meal['RepeatChoose'] = 0
+    df_meal['RepeatIgnore'] = 0
+    df_snack['RepeatChoose'] = 0
+    df_snack['RepeatIgnore'] = 0
     df_meal.to_pickle("cleaned_data_with_allegery_meal.pkl")
     df_snack.to_pickle("cleaned_data_with_allegery_snack.pkl")
 

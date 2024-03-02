@@ -1,23 +1,26 @@
+import pickle
+import pandas as pd
 from datetime import datetime
 from RSV1 import get_receipts
 from ReadData import read_data
 from DataClean import tokenize_words, clean_data
 from BuildTFIDFModel import build_customize_tfidf_model, build_general_tfidf_model, update_customize_tfidf_model
+from BuildPreferenceModel import initialize_preference_vector
 # from firebase_functions import firestore_fn, https_fn
 # from firebase_admin import initialize_app, firestore
 # import google.cloud.firestore
 
 # app = initialize_app()
 
-def recommend_function(Ingredients, Allegerie, currentNutributionDict, snacks=0):
+def recommend_function(Ingredients, Allegerie, currentNutributionDict, preference_vector, category_encoding, snacks=0):
     string = ""
     if bool(set(tokenize_words(Ingredients).split(' ')).intersection(set(tokenize_words(Allegerie).split(' ')))):
         string = "Warning: The ingredients contain allergens"
     else:
         if not snacks:
-            receipts = get_receipts(r"cleaned_data_with_allegery_meal.pkl", Ingredients, currentNutributionDict, 1)
+            receipts = get_receipts(r"cleaned_data_with_allegery_meal.pkl", Ingredients, currentNutributionDict, preference_vector, category_encoding, 1)
         else:
-            receipts = get_receipts(r"cleaned_data_with_allegery_snack.pkl", Ingredients, currentNutributionDict, 2)
+            receipts = get_receipts(r"cleaned_data_with_allegery_snack.pkl", Ingredients, currentNutributionDict, preference_vector, category_encoding, 2)
         for index, i in enumerate(receipts):
             string += f"Receipt {index + 1}:\n"
             for j in i.keys():
@@ -79,6 +82,12 @@ def SysUse(file_path):
     read_data(file_path=file_path)
     clean_data()
     build_general_tfidf_model()
+    df = pd.read_pickle('Receipts.pkl')
+    lis = sorted(list(set((df['RecipeCategory']))))[1:]
+    RecipeCategory = {Category: index for index, Category in enumerate(lis)}
+    with open('RecipeCategory.pkl', 'wb') as f:
+        pickle.dump(RecipeCategory, f)
+
 
 # @app.route('/firstAccess', methods=['POST'])
 # def first_access():
@@ -94,18 +103,10 @@ def SysUse(file_path):
 
 
 
-def first_access(Height, CurrentWeights, TargetWeights, time, sex, age, Allegerie):
-    dailyNutritionLimitationDict = dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age)
+def first_access(Height, CurrentWeights, TargetWeights, time, sex, age, Allegerie, Preference):
+    UserdailyNutritionLimitationDict = dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age)
+    with open('UserdailyNutrition.pkl', 'wb') as f:
+        pickle.dump(UserdailyNutritionLimitationDict, f)
     build_customize_tfidf_model(Allegerie)
-    return dailyNutritionLimitationDict
+    initialize_preference_vector(Height, CurrentWeights, TargetWeights, sex, age, Preference)
 
-# #Sample User
-# Height = 165 # cm
-# CurrentWeights = 198 # pounds
-# TargetWeights = 154 # pounds
-# Sex = 'F'
-# Target_date = '2024/06/15'
-# Allegeries = ['peanut', 'milk', 'wheat', 'shellfish']
-# Ingredients = ['chicken', 'onion', 'garlic', 'tomato', 'rice']
-# receipts = main(Ingredients, Allegeries)
-# print(receipts)
