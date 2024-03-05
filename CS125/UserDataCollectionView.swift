@@ -12,6 +12,7 @@ struct UserDataCollectionView: View {
     @ObservedObject public var authViewModel: AuthenticationViewModel
     @Binding var dataCollectionView: Bool
     @State private var newAllergy: String = ""
+    @State private var newCat: String = "Select a category"
     
     let ageRange = 1...100
     let weightRange = 50...300
@@ -97,6 +98,76 @@ struct UserDataCollectionView: View {
                                         
                                         Button(action: {
                                             dataViewModel.removeAllergy(at: IndexSet(integer: index))
+                                        }) {
+                                            Image(systemName: "minus.circle.fill")
+                                                .foregroundColor(.red)
+                                        }
+                                        .padding(.trailing, 22)
+                                    }
+                                    
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 130)
+                }
+                .padding(.leading, 15)
+                .padding(.bottom, 15)
+                
+                Text("Food Categories")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 15)
+                
+                VStack {
+                    HStack {
+                        Menu {
+                            ForEach(dataViewModel.food_cat, id: \.self) { value in
+                                Button("\(value)") {
+                                    self.newCat = value
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text("\(self.newCat)")
+                                    .foregroundColor(.black)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.down")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                            .background(Color.white)
+                        }
+                        
+                        Button(action: {
+                            guard !self.newCat.isEmpty else { return }
+                            dataViewModel.addCat(self.newCat)
+                            self.newCat = "Select a category"
+                        }) {
+                            Image(systemName: "plus.circle.fill")
+                                .resizable()
+                                .frame(width: 25, height: 25)
+                                .foregroundColor(.green)
+                        }
+                        .padding(.trailing, 20)
+                    }
+                    
+                    ScrollView(.vertical) {
+                        ScrollViewReader { value in
+                            VStack {
+                                ForEach(dataViewModel.foodCategories.indices, id: \.self) { index in
+                                    HStack {
+                                        Text(dataViewModel.foodCategories[index])
+                                            .padding(5)
+                                            .padding(.leading, 15)
+                                            .id(index)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        
+                                        Button(action: {
+                                            dataViewModel.removeCat(at: IndexSet(integer: index))
                                         }) {
                                             Image(systemName: "minus.circle.fill")
                                                 .foregroundColor(.red)

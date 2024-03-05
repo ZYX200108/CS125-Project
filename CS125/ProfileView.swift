@@ -34,7 +34,7 @@ struct ProfileView: View {
     @State var curWeightView: Bool = false
     @State var targetWeightView: Bool = false
     @State var newAllergy: String = ""
-    
+    @State var newCat: String = "Select a category"
     var body: some View {
         VStack {
             List {
@@ -174,6 +174,60 @@ struct ProfileView: View {
                         guard !newAllergy.isEmpty else { return }
                         profileViewModel.addAllergy(newAllergy)
                         newAllergy = ""
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .resizable()
+                            .frame(width: 18, height: 18)
+                            .foregroundColor(.green)
+                    }
+                }
+                
+                Text("Food Categories: ")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 20)
+                
+                ForEach(profileViewModel.foodCategories.indices, id: \.self) { index in
+                    HStack {
+                        Text(profileViewModel.foodCategories[index])
+                            .padding(5)
+                            .padding(.leading, 50)
+                            .id(index)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        Button(action: {
+                            profileViewModel.removeCat(at: IndexSet(integer: index))
+                        }) {
+                            Image(systemName: "minus.circle.fill")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+                
+                HStack {
+                    Menu {
+                        ForEach(profileViewModel.food_cat, id: \.self) { value in
+                            Button("\(value)") {
+                                self.newCat = value
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text("\(self.newCat)")
+                                .foregroundColor(Color(red: 0.75, green: 0.75, blue: 0.75))
+                                .padding(.leading, 55)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.down")
+                                .foregroundColor(.gray)
+                        }
+                        .background(Color.white)
+                    }
+                    
+                    Button(action: {
+                        guard !self.newCat.isEmpty else { return }
+                        profileViewModel.addCat(self.newCat)
+                        self.newCat = "Select a category"
                     }) {
                         Image(systemName: "plus.circle.fill")
                             .resizable()
