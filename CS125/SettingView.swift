@@ -8,6 +8,9 @@
 
 import SwiftUI
 import UserNotifications
+import FirebaseFunctions
+import FirebaseAuth
+import Foundation
 
 enum Theme: String {
     case light, dark
@@ -24,6 +27,9 @@ struct SettingView: View {
     @State private var showingSettingsAlert = false
     @State private var openAppSettings = false
     @AppStorage("themePreference") private var themePreference: Theme = .light
+    
+    @State var testString: String = "Nothing"
+    @StateObject var testModel: testViewModel = testViewModel()
     
     var body: some View {
         NavigationView {
@@ -69,6 +75,18 @@ struct SettingView: View {
                             Text("1.0.0")
                                 .foregroundColor(.gray)
                         }
+                        
+                        Button("Hello World") {
+                            self.testModel.fetchHelloWorld { response in
+                                self.testString = response
+                            }
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                        
+                        Text(self.testString)
                     }
                 }
                 .listStyle(PlainListStyle())
@@ -132,4 +150,29 @@ struct ExampleView: View {
                 .foregroundColor(themePreference == .dark ? .white : .black)
                 .background(themePreference == .dark ? Color.black : Color.white)
         }
+}
+
+class testViewModel: ObservableObject {
+    // Use a published property to update the UI in response to changes
+    @Published var responseString: String = ""
+    
+    func fetchHelloWorld(completion: @escaping (String) -> Void) {
+        let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/helloWorld"
+        guard let url = URL(string: urlString) else { return }
+
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                DispatchQueue.main.async {
+                    completion(responseString)
+                }
+            } else if let error = error {
+                print("HTTP Request Failed \(error)")
+                DispatchQueue.main.async {
+                    completion("Error: \(error.localizedDescription)")
+                }
+            }
+        }
+
+        task.resume()
+    }
 }
