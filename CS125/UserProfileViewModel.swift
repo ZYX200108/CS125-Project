@@ -24,11 +24,15 @@ class UserProfileViewModel: ObservableObject {
     private var docID: String = ""
     
     func addAllergy(_ allergy: String) {
-        foodAllergies.append(allergy)
+        DispatchQueue.main.async {
+            self.foodAllergies.append(allergy)
+        }
     }
     
     func removeAllergy(at offsets: IndexSet) {
-        foodAllergies.remove(atOffsets: offsets)
+        DispatchQueue.main.async {
+            self.foodAllergies.remove(atOffsets: offsets)
+        }
     }
     
     func updateUserData() {
@@ -63,21 +67,23 @@ class UserProfileViewModel: ObservableObject {
             
             let userData = user.data()
             
-            docID = user.documentID
-            
-            age = userData["age"] as? Int ?? 0
-            weight = userData["weight"] as? Int ?? 0
-            targetWeight = userData["targetWeight"] as? Int ?? 0
-            height = userData["height"] as? Int ?? 0
-            foodAllergies = userData["allergies"] as? [String] ?? []
-            sex = userData["sex"] as? String ?? "Unknown"
-            
-            if let date = userData["target Date"] as? [Int], date.count == 3 {
-                targetYear = date[0]
-                targetMonth = date[1]
-                targetDay = date[2]
-            } else {
-                print("Date is missing or not in the expected format.")
+            DispatchQueue.main.async {
+                self.docID = user.documentID
+                
+                self.age = userData["age"] as? Int ?? 0
+                self.weight = userData["weight"] as? Int ?? 0
+                self.targetWeight = userData["targetWeight"] as? Int ?? 0
+                self.height = userData["height"] as? Int ?? 0
+                self.foodAllergies = userData["allergies"] as? [String] ?? []
+                self.sex = userData["sex"] as? String ?? "Unknown"
+                
+                if let date = userData["target Date"] as? [Int], date.count == 3 {
+                    self.targetYear = date[0]
+                    self.targetMonth = date[1]
+                    self.targetDay = date[2]
+                } else {
+                    print("Date is missing or not in the expected format.")
+                }
             }
         } catch {
             print("Error getting documents: \(error)")

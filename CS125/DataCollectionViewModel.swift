@@ -22,11 +22,15 @@ class UserDataCollectionViewModel: ObservableObject {
     @Published var targetDay: Int = 11
         
     func addAllergy(_ allergy: String) {
-        foodAllergies.append(allergy)
+        DispatchQueue.main.async {
+            self.foodAllergies.append(allergy)
+        }
     }
     
     func removeAllergy(at offsets: IndexSet) {
-        foodAllergies.remove(atOffsets: offsets)
+        DispatchQueue.main.async {
+            self.foodAllergies.remove(atOffsets: offsets)
+        }
     }
     
     func saveUserData(userName: String, email: String) async {
