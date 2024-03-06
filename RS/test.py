@@ -1,15 +1,16 @@
-import pandas as pd
-import numpy as np
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
-# Sample DataFrame
-data = {'Name': ['John', 'Anna', 'Peter', 'Linda'],
-        'Age': [28, 34, 29, 32]}
-df = pd.DataFrame(data)
+cred = credentials.Certificate("cs125-healthapp-firebase-adminsdk-5vvud-3b42de41dd.json")
+app = firebase_admin.initialize_app(cred)
 
-# Add a new column with default value 0
-df['NewColumn'] = 0
+db = firestore.client()
 
-a = np.array([0,2])
+users_ref = db.collection("users")
+docs = users_ref.stream()
 
-df.iloc[a, df.columns.get_loc('NewColumn')] += 1
-print(df)
+for doc in docs:
+    print(doc.to_dict())
+    print(type(doc.to_dict()["target Date"]))
+
