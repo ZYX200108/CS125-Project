@@ -1,4 +1,5 @@
 import pandas as pd
+from utilities import encodeDF, decode2df, are_dataframes_equal
 
 def is_numeric(s):
     try:
@@ -43,4 +44,10 @@ def read_data(file_path):
 
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-    df.to_pickle("Receipts.pkl")
+    df_string = encodeDF(df)
+
+    update_database_dict = {"Receipts": df_string}
+
+    # The code to update the dict
+
+
