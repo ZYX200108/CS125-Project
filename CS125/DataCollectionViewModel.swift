@@ -49,7 +49,8 @@ class UserDataCollectionViewModel: ObservableObject {
     
     func saveUserData(userName: String, email: String) async {
         do {
-          let ref = try await db.collection("users").addDocument(data: [
+            let ref = db.collection("users").document(userName)
+            try await ref.setData([
             "name": userName,
             "age": age,
             "weight": weight,
@@ -60,7 +61,7 @@ class UserDataCollectionViewModel: ObservableObject {
             "email": email,
             "sex": sex,
             "target Date": [targetYear, targetMonth, targetDay]
-          ])
+            ])
           print("Document added with ID: \(ref.documentID)")
         } catch {
           print("Error adding document: \(error)")
