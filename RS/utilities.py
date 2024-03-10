@@ -28,6 +28,28 @@ def are_dataframes_equal(df1: pandas.DataFrame, df2: pandas.DataFrame, check_ind
         return False
     return True
 
+def divideString(s, n):
+    # length = len(string) // n
+    # parts = {}
+    # for i in range(n):
+    #     parts[f'Recipes Part {i}'] = string[i * length: (i + 1) * length]
+    # return parts
+    part_length = len(s) // n
+    remainder = len(s) % n
+    
+    parts = {}
+    for i in range(n):
+        start_index = i * part_length + min(i, remainder)
+        end_index = start_index + part_length + (1 if i < remainder else 0)
+        parts[f'Recipes Part {i}'] = s[start_index:end_index]
+    return parts
+
+def recoverRecipeString(parts):
+    string = ""
+    for part in parts:
+        string += parts[part]
+    return string
+
 def encodeObject(obj) -> str:
     pickle_string = pickle.dumps(obj)
     encoded_data = base64.b64encode(pickle_string)

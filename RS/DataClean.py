@@ -1,11 +1,24 @@
 import nltk
 import unidecode
 import pandas as pd
+# import firebase_admin
+# from firebase_admin import credentials, storage, firestore
+from utilities import encodeDF, decode2df, divideString
+
+# cred = credentials.Certificate("cs125-healthapp-firebase-adminsdk-5vvud-3b42de41dd.json")
+# app = firebase_admin.initialize_app(cred)
+
+# db = firestore.client()
 
 def clean_data():
     nltk.download('wordnet')
-    df = pd.read_pickle("Receipts.pkl")
-
+    print("Begin to retrieve data...")
+    string = ""
+    for i in range(1000):
+        string += db.collection("RecipeDataBase").document(f"RecipeData Part {i}").get().to_dict()["Data"]
+    df = decode2df(string)
+    print("Finish retrieving data")
+    
     print("Begin to clean data...")
     ingredients = []
     words_to_remove = []
@@ -31,7 +44,9 @@ def clean_data():
     print("Finish cleaning")
 
     df['Ingredients'] = clean_text
-    df.to_pickle("cleaned_data.pkl")
+    # df.to_pickle("cleaned_data.pkl")
+    df_string = encodeDF(df)
+    return df_string
 
 def tokenize_words(words):
     # Stemming and Lemmatization
@@ -45,3 +60,10 @@ def tokenize_words(words):
     clean_text = ' '.join(words)
     return clean_text
 
+# Only needs to run once when initializing the app
+# string = clean_data()
+# parts = divideString(string, 1000)
+# index = 0
+# for i in parts:
+#     db.collection("CleanRecipeDataBase").document(f"CleanData Part {index}").set({"Data": parts[i]})
+#     index += 1

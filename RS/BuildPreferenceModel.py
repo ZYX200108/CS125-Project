@@ -1,10 +1,8 @@
-import pickle
 import numpy as np
-from RSV1 import Read_data
+from utilities import encodeDF, decode2df, divideString
 
-def initialize_preference_vector(height, current_weight, target_weight, sex, age, preference):
-    with open('RecipeCategory.pkl', 'rb') as f:
-        categories_encoding = pickle.load(f)
+def initialize_preference_vector(db, user_name, height, current_weight, target_weight, sex, age, preference):
+    categories_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
     sex_encoding = {'M': 0, 'F': 1}
 
     categories_vector = [0] * len(categories_encoding)
@@ -20,15 +18,21 @@ def initialize_preference_vector(height, current_weight, target_weight, sex, age
     normalized_target_weight = (target_weight - 50) / 100
 
     preference_vector = categories_vector + sex_vector + [normalized_height, normalized_current_weight, normalized_target_weight] + [age]
-    with open('UserPreferenceModel.pkl', 'wb') as f:
-        pickle.dump(preference_vector, f)
+    db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
-def update_preference_vector(receipts, file_path, which):
-    with open('UserPreferenceModel.pkl', 'rb') as f:
-        preference_vector = pickle.load(f)
-    with open('RecipeCategory.pkl', 'rb') as f:
-        category_encoding = pickle.load(f)
-    df = Read_data(file_path)
+def update_preference_vector(db, user_name, receipts, which, meal=True):
+    preference_vector = db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").get().to_dict()["Data"]
+    category_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
+    if meal:
+        string = ""
+        for i in range(1000):
+            string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
+        df = decode2df(string)
+    else:
+        string = ""
+        for i in range(1000):
+            string += db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
+        df = decode2df(string)
     indexs = list(receipts.index)
     indexs_ignore = np.array(indexs[: which] + indexs[which+1:])
     df.iloc[indexs_ignore, df.columns.get_loc('RepeatIgnore')] += 1
@@ -43,10 +47,20 @@ def update_preference_vector(receipts, file_path, which):
         preference_vector[category_encoding[i]] = max(0, preference_vector[category_encoding[i]] - 0.03 * df.iloc[indexs_ignore[index], df.columns.get_loc('RepeatIgnore')])
     preference_vector[category_encoding[need]] = min(1, preference_vector[category_encoding[i]] + 0.03 * df.iloc[indexs_ignore[which], df.columns.get_loc('RepeatIgnore')])
 
-    df.to_pickle(file_path)
-    with open('UserPreferenceModel.pkl', 'wb') as f:
-        pickle.dump(preference_vector, f)
+    if meal:
+        meal_string = encodeDF(df)
+        meal_parts = divideString(meal_string, 1000)
+        index = 0
+        for i in meal_parts:
+            db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
+    else:
+        snack_string = encodeDF(df)
+        snack_parts = divideString(snack_string, 1000)
+        index = 0
+        for i in snack_parts:
+            db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {index}").set({"Data": snack_parts[i]})
 
+    db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
 
     

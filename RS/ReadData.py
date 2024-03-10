@@ -1,5 +1,11 @@
 import pandas as pd
-from utilities import encodeDF, decode2df, are_dataframes_equal
+# import firebase_admin
+from firebase_admin import credentials, storage, firestore
+from utilities import encodeDF, divideString, recoverString
+
+# cred = credentials.Certificate("cs125-healthapp-firebase-adminsdk-5vvud-3b42de41dd.json")
+# app = firebase_admin.initialize_app(cred)
+# db = firestore.client()
 
 def is_numeric(s):
     try:
@@ -48,6 +54,20 @@ def read_data(file_path):
 
     update_database_dict = {"Receipts": df_string}
 
-    # The code to update the dict
+    return update_database_dict
 
+# Only needs to run once when initializing the app
+# database = read_data("/Users/zhanghaodong/Desktop/CS125-Project/Receipts.csv")
+# parts = divideString(database["Receipts"], 1000)
+# index = 0
 
+# for i in parts:
+#     db.collection("RecipeDataBase").document(f"RecipeData Part {index}").set({"Data": parts[i]})
+#     index += 1
+
+# string = ""
+# start = time.time()
+# for i in range(1000):
+#     string += db.collection("RecipeDataBase").document(f"RecipeData Part {i}").get().to_dict()["Data"]
+# print(string == database["Receipts"])
+# print(time.time() - start)
