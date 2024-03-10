@@ -10,8 +10,11 @@ import base64
 import numpy as np
 import pandas as pd
 import pickle
+import re
 from io import BytesIO
+from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import normalize
 from datetime import datetime
 
 nltk.download('wordnet')
@@ -20,7 +23,7 @@ app = firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-# Utilities Model #################################################################################################################
+# Utilities Model ##################################################################################################################
 def tokenize_words(words):
     # Stemming and Lemmatization
     words_to_remove = ['salt', 'sugar', 'pepper', 'fresh']
@@ -242,19 +245,14 @@ def initialize_preference_vector(user_name, height, current_weight, target_weigh
     preference_vector = categories_vector + sex_vector + [normalized_height, normalized_current_weight, normalized_target_weight] + [age]
     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
-def update_preference_vector(db, user_name, receipts, which, meal=True):
+def update_preference_vector(user_name, which):
+    receipts = db.collection("users").document(user_name).collection("Recommendation").document("Recommendation").get().to_dict()["Data"]
     preference_vector = db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").get().to_dict()["Data"]
     category_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
-    if meal:
-        string = ""
-        for i in range(1000):
-            string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
-        df = decode2df(string)
-    else:
-        string = ""
-        for i in range(1000):
-            string += db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
-        df = decode2df(string)
+    string = ""
+    for i in range(1000):
+        string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
+    df = decode2df(string)
     indexs = list(receipts.index)
     indexs_ignore = np.array(indexs[: which] + indexs[which+1:])
     df.iloc[indexs_ignore, df.columns.get_loc('RepeatIgnore')] += 1
@@ -268,22 +266,113 @@ def update_preference_vector(db, user_name, receipts, which, meal=True):
     for index, i in enumerate(categories_ignore):
         preference_vector[category_encoding[i]] = max(0, preference_vector[category_encoding[i]] - 0.03 * df.iloc[indexs_ignore[index], df.columns.get_loc('RepeatIgnore')])
     preference_vector[category_encoding[need]] = min(1, preference_vector[category_encoding[i]] + 0.03 * df.iloc[indexs_ignore[which], df.columns.get_loc('RepeatIgnore')])
-
-    if meal:
-        meal_string = encodeDF(df)
-        meal_parts = divideString(meal_string, 1000)
-        index = 0
-        for i in meal_parts:
-            db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
-    else:
-        snack_string = encodeDF(df)
-        snack_parts = divideString(snack_string, 1000)
-        index = 0
-        for i in snack_parts:
-            db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {index}").set({"Data": snack_parts[i]})
-
+    meal_string = encodeDF(df)
+    meal_parts = divideString(meal_string, 1000)
+    index = 0
+    for i in meal_parts:
+        db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
+# Update Daily Nutritions ##########################################################################################################
+def update_daily_nutritions(user_name):
+    # from the frontend, set a timer at 0:00 to reset the currentday nutritions to everyday nutritions
+    # The backend function that needs to be called
+    dic = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+    db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
+
+# Recommendation ###################################################################################################################
+def parse_and_format_steps(recipe_steps_str):
+    recipe_steps_str = recipe_steps_str[2:-1]
+    initial_steps = re.split('",\s*"\n*|",\n*"', recipe_steps_str)
+    all_steps = []
+
+    for step in initial_steps:
+        step = step.strip('"')
+        sub_steps = re.split(r'\.\s+(?=[A-Z])', step)
+        all_steps.extend(sub_steps)
+    formatted_steps = "\n".join(f"{i+1}. {step}" for i, step in enumerate(all_steps))
+    
+    return formatted_steps
+
+def recommend_top_5_receipts(user_name, ingredients):
+    currentNutributionDict = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+    preference_vector = db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").get().to_dict()["Data"]
+    category_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
+
+    model_string = db.collection("users").document(user_name).collection("TFIDF_Customize_Meal").document(f"TFIDF_Meal_Model").get().to_dict()["Data"]
+    tfidf_model = decodeObject(model_string)
+    string = ""
+    for i in range(1000):
+        string += db.collection("users").document(user_name).collection("TFIDF_Customize_Meal").document(f"TFIDF_Meal_Recipe Part {i}").get().to_dict()["Data"]
+    tfidf_recipe = normalize(decodeObject(string))
+    enocde_ingredients = normalize(tfidf_model.transform([tokenize_words(ingredients)]))
+
+    Recommendations = np.array(list(cosine_similarity(enocde_ingredients, tfidf_recipe)[0]))
+    Top_30 = Recommendations.argsort()[-30:][::-1]
+    Recommendations_Top_30 = Recommendations[Top_30]
+
+    string = ""
+    for i in range(1000):
+        string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
+    df = decode2df(string)
+    df['Calories'] = pd.to_numeric(df['Calories'], errors='coerce')
+    df['FatContent'] = pd.to_numeric(df['FatContent'], errors='coerce')
+    df['CholesterolContent'] = pd.to_numeric(df['CholesterolContent'], errors='coerce')
+    df['SodiumContent'] = pd.to_numeric(df['SodiumContent'], errors='coerce')
+    df['CarbohydrateContent'] = pd.to_numeric(df['CarbohydrateContent'], errors='coerce')
+    df['FiberContent'] = pd.to_numeric(df['FiberContent'], errors='coerce')
+    df['ProteinContent'] = pd.to_numeric(df['ProteinContent'], errors='coerce')
+    df['SugarContent'] = pd.to_numeric(df['SugarContent'], errors='coerce')
+    receipts = df.iloc[Top_30]
+    # Combining Preference Vector
+    receipts_categories = list(receipts['RecipeCategory'])
+    receipts_categories_value = np.array([preference_vector[category_encoding[category]] for category in receipts_categories])
+    Recommendations_Top_30 = Recommendations_Top_30 + 0.1 * receipts_categories_value
+    temp = {index: score for index, score in zip(Top_30, Recommendations_Top_30)}
+    Top_30 = np.array(list(dict(sorted(temp.items(), key=lambda item: item[1], reverse=True)).keys()))
+    receipts = df.iloc[Top_30]
+    receipts = receipts[
+        (receipts["Calories"] <= currentNutributionDict['daliyCal']) &
+        (receipts["FatContent"] <= currentNutributionDict['fat']) &
+        (receipts["CholesterolContent"] <= currentNutributionDict['cholesterol']) &
+        (receipts["SodiumContent"] <= currentNutributionDict['sodium']) &
+        (receipts["CarbohydrateContent"] <= currentNutributionDict['carbs']) &
+        (receipts["FiberContent"] <= currentNutributionDict['fiber']) &
+        (receipts["ProteinContent"] <= currentNutributionDict['protein']) &
+        (receipts["SugarContent"] <= currentNutributionDict['sugar'])
+    ] 
+
+    string = encodeDF(receipts[:5])
+    db.collection("users").document(user_name).collection("Recommendation").document("Recommendation").set({"Data": string})
+    return receipts[:5]
+
+def get_receipts(user_name, ingredients): 
+    # The backend function that needs to be called
+    receipts = recommend_top_5_receipts(user_name, ingredients)
+    receipts_info = []
+    for i in range(5):
+        recei = {}
+        recei['Name'] = receipts.iloc[i]['Name']
+        items = receipts.iloc[i]['RecipeIngredientQuantities'][3:-1].split('", "')
+        words_q = [word for item in items for word in item.strip('"').split(' ')]
+        items = receipts.iloc[i]['RecipeIngredientParts'][3:-1].split('", "')
+        words_p = [word for item in items for word in item.strip('"').split(' ')]
+        combined_list = [f"{q} {i}" for q, i in zip(words_q, words_p)]
+        recei['Ingredients'] = ', '.join(combined_list)
+        numbered_steps = parse_and_format_steps(receipts.iloc[i]['RecipeInstructions'])
+        recei['Steps'] = numbered_steps
+        recei['Calories'] = receipts.iloc[i]['Calories']
+        recei['Fat'] = receipts.iloc[i]['FatContent']
+        recei['Cholesterol'] = receipts.iloc[i]['CholesterolContent']
+        recei['Sodium'] = receipts.iloc[i]['SodiumContent']
+        recei['Carbohydrate'] = receipts.iloc[i]['CarbohydrateContent']
+        recei['Fiber'] = receipts.iloc[i]['FiberContent']
+        recei['Protein'] = receipts.iloc[i]['ProteinContent']
+        recei['Sugar'] = receipts.iloc[i]['SugarContent']
+        receipts_info.append(recei)
+    db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': receipts_info})
+    
+# Callable Functions ###############################################################################################################
 @https_fn.on_request(
         cors=options.CorsOptions(
         cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
@@ -309,7 +398,43 @@ def initializeUserModels(req: https_fn.Request) -> https_fn.Response:
     dic = dailyNutritions(height, current, target, string, sex, age)
     db.collection("users").document(userName).collection("nutritions").document("everyday").set(dic)
     build_customize_tfidf_model(userName, allegeries)
-
     initialize_preference_vector(userName, height, current, target, sex, age, preference)
-
     return https_fn.Response("User successfully created.")
+
+@https_fn.on_request(
+        cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
+def updatePreferenceVector(req: https_fn.Request) -> https_fn.Response:
+    args = req.args
+    userName = args["userName"]
+    which = int(args["which"])
+    update_preference_vector(userName, which)
+    return https_fn.Response("Preference Vector Updated.")
+
+@https_fn.on_request(
+        cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
+def updateDailyNutritions(req: https_fn.Request) -> https_fn.Response:
+    args = req.args
+    userName = args["userName"]
+    update_daily_nutritions(userName)
+    return https_fn.Response("Daily Nutritions Updated.")
+
+@https_fn.on_request(
+        cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
+def getReceipts(req: https_fn.Request) -> https_fn.Response:
+    args = req.args
+    userName = args["userName"]
+    ingredients = args["ingredients"]
+    get_receipts(userName, ingredients)
+    return https_fn.Response("Receipts Updated.")
