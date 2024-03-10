@@ -3,3 +3,5 @@
 *.csv
 *.pyc
 .DS_Store
+functions/venv
+functions/__pycache__

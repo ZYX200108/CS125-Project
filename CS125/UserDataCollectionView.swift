@@ -197,8 +197,11 @@ struct UserDataCollectionView: View {
                     
                     Button("Sign Up") {
                         Task {
+                            print("sign up button clicked")
                             await authViewModel.signUpWithEmail()
                             await dataViewModel.saveUserData(userName: authViewModel.displayName, email: authViewModel.email)
+                            let httpModel = httpRequestModel(name:authViewModel.displayName)
+                            httpModel.initializeUser { response in }
                         }
                     }
                     .padding()
