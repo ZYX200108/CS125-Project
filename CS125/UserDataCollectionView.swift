@@ -20,6 +20,7 @@ struct UserDataCollectionView: View {
     let yearRange = 2024...2030
     let monthRange = 1...12
     let sexOption = ["Male", "Female"]
+    let activityLevels = ["sedentary", "lightly active", "moderately active", "very active"]
 
     var body: some View {
         Text("Data Collection")
@@ -60,6 +61,33 @@ struct UserDataCollectionView: View {
                     dataChoiceView(title: "Height", range: heightRange, selection: $dataViewModel.height)
                     dataChoiceView(title: "Current Weight", range: weightRange, selection: $dataViewModel.weight)
                     dataChoiceView(title: "Target Weight", range: weightRange, selection: $dataViewModel.targetWeight)
+                    
+                    VStack(alignment: .leading) {
+                        Text("Activity Level")
+                            .font(.headline)
+                        
+                        Menu {
+                            ForEach(activityLevels, id: \.self) { value in
+                                Button("\(value)") {
+                                    dataViewModel.activityLevel = value
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text("\(dataViewModel.activityLevel)")
+                                    .foregroundColor(.black)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.down")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                            .background(Color.white)
+                        }
+                    }
+                    .padding(.leading, 15)
+                    .padding(.vertical, 5)
                 }
                 
                 Text("Food Allergies")
@@ -131,7 +159,8 @@ struct UserDataCollectionView: View {
                         } label: {
                             HStack {
                                 Text("\(self.newCat)")
-                                    .foregroundColor(.black)
+                                    .padding(.leading, 5)
+                                    .foregroundColor(Color(red: 0.75, green: 0.75, blue: 0.75))
                                 
                                 Spacer()
                                 
@@ -200,8 +229,8 @@ struct UserDataCollectionView: View {
                             print("sign up button clicked")
                             await authViewModel.signUpWithEmail()
                             await dataViewModel.saveUserData(userName: authViewModel.displayName, email: authViewModel.email)
-                            let httpModel = httpRequestModel(name:authViewModel.displayName)
-                            httpModel.initializeUser { response in }
+//                            let httpModel = httpRequestModel(name:authViewModel.displayName)
+//                            httpModel.initializeUser { response in }
                         }
                     }
                     .padding()

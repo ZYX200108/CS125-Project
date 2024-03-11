@@ -33,6 +33,7 @@ struct ProfileView: View {
     @State var ageView: Bool = false
     @State var curWeightView: Bool = false
     @State var targetWeightView: Bool = false
+    @State var activityLevelView: Bool = false
     @State var newAllergy: String = ""
     @State var newCat: String = "Select a category"
     var body: some View {
@@ -142,6 +143,32 @@ struct ProfileView: View {
                     }
                     .sheet(isPresented: $targetWeightView) {
                         dataView(title: "Target Weight", range: 50...300, unit: "lb", buttonName: "Done", selectedVar: $profileViewModel.targetWeight, viewState: $targetWeightView)
+                    }
+                }
+                
+                HStack {
+                    Text("Sex:")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 20)
+                    
+                    Button(String(profileViewModel.activityLevel)) {
+                        activityLevelView = true
+                    }
+                    .sheet(isPresented: $activityLevelView) {
+                        NavigationView {
+                            Picker("Select your activity level", selection: $profileViewModel.activityLevel) {
+                                ForEach(["sedentary", "lightly active", "moderately active", "very active"], id: \.self) { value in
+                                    Button("\(value)") {
+                                        profileViewModel.activityLevel = value
+                                    }
+                                }
+                            }
+                            .pickerStyle(WheelPickerStyle())
+                            .navigationTitle("Activity Level")
+                            .navigationBarItems(trailing: Button("Done") {
+                                activityLevelView = false
+                            })
+                        }
                     }
                 }
                 
