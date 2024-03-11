@@ -460,6 +460,6 @@ def updateDailyNutritions(req: https_fn.Request) -> https_fn.Response:
 def getReceipts(req: https_fn.Request) -> https_fn.Response:
     args = req.args
     userName = args["userName"]
-    ingredients = args["ingredients"]
+    ingredients = args["ingredients"].split(",")
     get_receipts(userName, ingredients)
     return https_fn.Response("Receipts Updated.")
