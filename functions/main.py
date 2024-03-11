@@ -246,7 +246,9 @@ def initialize_preference_vector(user_name, height, current_weight, target_weigh
     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
 def update_preference_vector(user_name, which):
-    receipts = db.collection("users").document(user_name).collection("Recommendation").document("Recommendation").get().to_dict()["Data"]
+    dic = db.collection("users").document(user_name).collection("nutritions").document("currentday").get().to_dict()
+    receipts_string = db.collection("users").document(user_name).collection("Recommendation").document("Recommendation").get().to_dict()["Data"]
+    receipts = decode2df(receipts_string)
     preference_vector = db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").get().to_dict()["Data"]
     category_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
     string = ""
@@ -257,8 +259,8 @@ def update_preference_vector(user_name, which):
     indexs_ignore = np.array(indexs[: which] + indexs[which+1:])
     df.iloc[indexs_ignore, df.columns.get_loc('RepeatIgnore')] += 1
     df.iloc[indexs_ignore, df.columns.get_loc('RepeatChoose')] = 0
-    df.iloc[which, df.columns.get_loc('RepeatChoose')] += 1
-    df.iloc[which, df.columns.get_loc('RepeatIgnore')] = 0
+    df.iloc[indexs[which], df.columns.get_loc('RepeatChoose')] += 1
+    df.iloc[indexs[which], df.columns.get_loc('RepeatIgnore')] = 0
 
     receipts_categories = list(receipts['RecipeCategory'])
     need = receipts_categories[which]
@@ -272,6 +274,16 @@ def update_preference_vector(user_name, which):
     for i in meal_parts:
         db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
+
+    dic['daliyCal'] = dic['daliyCal'] - receipts.iloc[which]['Calories']
+    dic['fat'] = dic['fat'] - receipts.iloc[which]['FatContent']
+    dic['cholesterol'] = dic['cholesterol'] - receipts.iloc[which]['CholesterolContent']
+    dic['sodium'] = dic['sodium'] - receipts.iloc[which]['SodiumContent']
+    dic['carbs'] = dic['carbs'] - receipts.iloc[which]['CarbohydrateContent']
+    dic['fiber'] = dic['fiber'] - receipts.iloc[which]['FiberContent']
+    dic['protein'] = dic['protein'] - receipts.iloc[which]['ProteinContent']
+    dic['sugar'] = dic['sugar'] - receipts.iloc[which]['SugarContent']
+    db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
 
 # Update Daily Nutritions ##########################################################################################################
 def update_daily_nutritions(user_name):
