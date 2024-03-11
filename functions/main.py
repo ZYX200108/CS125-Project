@@ -118,11 +118,11 @@ def calculate_max_daily_calories(height_cm, current_weight_lbs, target_weight_lb
     
     return max_daily_calories
 
-def dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age):
+def dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age, activity_level='not knonwn'):
     future_date = datetime.strptime(time, "%Y/%m/%d")
     today_date = datetime.now()
     days = (future_date - today_date).days
-    daliyCal = calculate_max_daily_calories(Height, CurrentWeights, TargetWeights, sex, age, days)
+    daliyCal = calculate_max_daily_calories(Height, CurrentWeights, TargetWeights, sex, age, days, activity_level)
     fat_max = daliyCal * 0.30 / 9
     cholesterol_max = 300
     sodium_max = 2300
@@ -390,12 +390,13 @@ def initializeUserModels(req: https_fn.Request) -> https_fn.Response:
     age = db.collection("users").document(userName).get().to_dict()['age']
     preference = db.collection("users").document(userName).get().to_dict()['foodCategories']
     time = db.collection("users").document(userName).get().to_dict()['target Date']
+    activity_level = db.collection("users").document(userName).get().to_dict()['activityLevel']
     string = ""
     for i in time:
         string = string + str(i) + "/"
     string = string[:-1]
 
-    dic = dailyNutritions(height, current, target, string, sex, age)
+    dic = dailyNutritions(height, current, target, string, sex, age, activity_level)
     db.collection("users").document(userName).collection("nutritions").document("everyday").set(dic)
     build_customize_tfidf_model(userName, allegeries)
     initialize_preference_vector(userName, height, current, target, sex, age, preference)
