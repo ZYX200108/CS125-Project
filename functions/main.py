@@ -386,6 +386,7 @@ def get_receipts(user_name, ingredients):
 
     lis = []
     for index, i in enumerate(receipts_info):
+        string = ""
         string += f"Receipt {index + 1}:\n"
         for j in i.keys():
             if j == 'Steps':
