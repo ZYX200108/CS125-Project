@@ -60,7 +60,7 @@ class httpRequestModel: ObservableObject {
     }
     
     func updateDailyNutritions(userName: String, completion: @escaping (String) -> Void) {
-        var urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/updateDailyNutritions?userName=\(userName)"
+        let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/updateDailyNutritions?userName=\(userName)"
         
         guard let url = URL(string: urlString) else { return }
 
@@ -80,7 +80,7 @@ class httpRequestModel: ObservableObject {
     }
     
     func updatePreferenceVector(userName: String, which: Int, completion: @escaping (String) -> Void) {
-        var urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/updatePreferenceVector?userName=\(userName)&which=\(which)"
+        let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/updatePreferenceVector?userName=\(userName)&which=\(which)"
         
         guard let url = URL(string: urlString) else { return }
 
