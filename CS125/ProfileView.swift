@@ -147,7 +147,7 @@ struct ProfileView: View {
                 }
                 
                 HStack {
-                    Text("Sex:")
+                    Text("Activity Level:")
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 20)
                     
