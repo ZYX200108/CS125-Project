@@ -273,6 +273,7 @@ def update_preference_vector(user_name, which):
     index = 0
     for i in meal_parts:
         db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
+        index += 1
     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
     dic['daliyCal'] = round(dic['daliyCal'] - receipts.iloc[which]['Calories'],2)
