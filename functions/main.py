@@ -384,19 +384,7 @@ def get_receipts(user_name, ingredients):
         recei['Sugar'] = receipts.iloc[i]['SugarContent']
         receipts_info.append(recei)
 
-    lis = []
-    for index, i in enumerate(receipts_info):
-        string = ""
-        string += f"Receipt {index + 1}:\n"
-        for j in i.keys():
-            if j == 'Steps':
-                string += f"{j}:\n{i[j]}\n"
-            else:
-                string += f"{j}: {i[j]}\n"
-        string += "\n"
-        lis.append(string)
-
-    db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': lis})
+    db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': receipts_info})
     
 # Callable Functions ###############################################################################################################
 @https_fn.on_request(
