@@ -1,19 +1,29 @@
+# # Dependencies for callable functions.
+# from firebase_functions import https_fn, options
+# import firebase_admin
+# # Dependencies for writing to Realtime Database.
+# from firebase_admin import credentials, storage, firestore
+
 # import nltk
 # import unidecode
 # import base64
 # import numpy as np
 # import pandas as pd
 # import pickle
+# import re
 # from io import BytesIO
+# from sklearn.metrics.pairwise import cosine_similarity
 # from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.preprocessing import normalize
 # from datetime import datetime
-# from firebase_functions import https_fn, options
-# import firebase_admin
-# # Dependencies for writing to Realtime Database.
-# from firebase_admin import credentials, storage, firestore
 
+# nltk.download('wordnet')
+# cred = credentials.Certificate("cs125-healthapp-firebase-adminsdk-5vvud-16c28be37c.json")
+# app = firebase_admin.initialize_app(cred)
 
-# # Utilities Model #################################################################################################################
+# db = firestore.client()
+
+# # Utilities Model ##################################################################################################################
 # def tokenize_words(words):
 #     # Stemming and Lemmatization
 #     words_to_remove = ['salt', 'sugar', 'pepper', 'fresh']
@@ -84,10 +94,11 @@
 #     current_weight_kg = current_weight_lbs / 2.20462
 #     target_weight_kg = target_weight_lbs / 2.20462
 
-#     if sex.lower() == 'm':
+#     if sex.lower() == 'male':
 #         BMR = 88.362 + (13.397 * current_weight_kg) + (4.799 * height_cm) - (5.677 * age)
 #     else:
 #         BMR = 447.593 + (9.247 * current_weight_kg) + (3.098 * height_cm) - (4.330 * age)
+#         print(BMR)
 
 #     if activity_level == 'sedentary':
 #         adjusted_BMR = BMR * 1.3
@@ -108,16 +119,16 @@
     
 #     return max_daily_calories
 
-# def dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age):
+# def dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age, activity_level='not knonwn'):
 #     future_date = datetime.strptime(time, "%Y/%m/%d")
 #     today_date = datetime.now()
 #     days = (future_date - today_date).days
-#     daliyCal = calculate_max_daily_calories(Height, CurrentWeights, TargetWeights, sex, age, days)
+#     daliyCal = calculate_max_daily_calories(Height, CurrentWeights, TargetWeights, sex, age, days, activity_level)
 #     fat_max = daliyCal * 0.30 / 9
 #     cholesterol_max = 300
 #     sodium_max = 2300
 #     carbs_max = daliyCal * 0.55 / 4
-#     if sex == 'F':
+#     if sex == 'Female':
 #         fiber_recommendation = 25
 #     else:
 #         fiber_recommendation = 38
@@ -181,23 +192,15 @@
 #     ]
 
 #     df_meal = df[~df['RecipeCategory'].apply(lambda x: x in categories)]
-#     df_snack = df[df['RecipeCategory'].apply(lambda x: x in categories)]
 #     df_meal['RepeatChoose'] = 0
 #     df_meal['RepeatIgnore'] = 0
-#     df_snack['RepeatChoose'] = 0
-#     df_snack['RepeatIgnore'] = 0
 
 #     meal_string = encodeDF(df_meal)
 #     meal_parts = divideString(meal_string, 1000)
 #     index = 0
 #     for i in meal_parts:
 #         db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
-
-#     snack_string = encodeDF(df_snack)
-#     snack_parts = divideString(snack_string, 1000)
-#     index = 0
-#     for i in snack_parts:
-#         db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {index}").set({"Data": snack_parts[i]})
+#         index += 1
 
 #     print("Begin to train customize TF-IDF model...")
 #     df_meal['RecipeIngredientParts'] = df_meal.RecipeIngredientParts.values.astype('U')
@@ -223,30 +226,6 @@
 #         index += 1
 #     print("Finish saving")
 
-#     print("Begin to train customize TF-IDF model...")
-#     df_snack['RecipeIngredientParts'] = df_snack.RecipeIngredientParts.values.astype('U')
-#     tfidf = TfidfVectorizer()
-#     tfidf.fit(df_snack['RecipeIngredientParts'])
-#     print("Finish training")
-
-#     print("Begin to tokenize original receipts...")
-#     tfidf_recipe = tfidf.transform(df_snack['RecipeIngredientParts'])
-#     print("Finish tokenizing")
-
-#     print("Begin to save model...")
-#     model_string = encodeObject(tfidf)
-#     db.collection("users").document(user_name).collection("TFIDF_Customize_Snack").document(f"TFIDF_Snack_Model").set({"Data": model_string})
-#     print("Finish saving")
-
-#     print("Begin to save tokenized receipts...")
-#     matrix_string = encodeObject(tfidf_recipe)
-#     parts = divideString(matrix_string, 1000)
-#     index = 0
-#     for i in parts:
-#         db.collection("users").document(user_name).collection("TFIDF_Customize_Snack").document(f"TFIDF_Snack_Recipe Part {index}").set({"Data": parts[i]})
-#         index += 1
-#     print("Finish saving")
-
 # # Preference Functions #############################################################################################################
 # def initialize_preference_vector(user_name, height, current_weight, target_weight, sex, age, preference):
 #     categories_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
@@ -267,56 +246,146 @@
 #     preference_vector = categories_vector + sex_vector + [normalized_height, normalized_current_weight, normalized_target_weight] + [age]
 #     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
-# def update_preference_vector(db, user_name, receipts, which, meal=True):
+# def update_preference_vector(user_name, which):
+#     dic = db.collection("users").document(user_name).collection("nutritions").document("currentday").get().to_dict()
+#     receipts_string = db.collection("users").document(user_name).collection("Recommendation").document("Recommendation").get().to_dict()["Data"]
+#     receipts = decode2df(receipts_string)
 #     preference_vector = db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").get().to_dict()["Data"]
 #     category_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
-#     if meal:
-#         string = ""
-#         for i in range(1000):
-#             string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
-#         df = decode2df(string)
-#     else:
-#         string = ""
-#         for i in range(1000):
-#             string += db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
-#         df = decode2df(string)
+#     string = ""
+#     for i in range(1000):
+#         string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
+#     df = decode2df(string)
 #     indexs = list(receipts.index)
 #     indexs_ignore = np.array(indexs[: which] + indexs[which+1:])
-#     df.iloc[indexs_ignore, df.columns.get_loc('RepeatIgnore')] += 1
-#     df.iloc[indexs_ignore, df.columns.get_loc('RepeatChoose')] = 0
-#     df.iloc[which, df.columns.get_loc('RepeatChoose')] += 1
-#     df.iloc[which, df.columns.get_loc('RepeatIgnore')] = 0
-
+#     for i in indexs_ignore:
+#         df.loc[i, 'RepeatIgnore'] += 1
+#         df.loc[i, 'RepeatChoose'] = 0
+#     df.loc[indexs[which], 'RepeatChoose'] += 1
+#     df.loc[indexs[which], 'RepeatIgnore'] = 0
 #     receipts_categories = list(receipts['RecipeCategory'])
 #     need = receipts_categories[which]
 #     categories_ignore = np.array(receipts_categories[: which] + receipts_categories[which+1:])
 #     for index, i in enumerate(categories_ignore):
 #         preference_vector[category_encoding[i]] = max(0, preference_vector[category_encoding[i]] - 0.03 * df.iloc[indexs_ignore[index], df.columns.get_loc('RepeatIgnore')])
 #     preference_vector[category_encoding[need]] = min(1, preference_vector[category_encoding[i]] + 0.03 * df.iloc[indexs_ignore[which], df.columns.get_loc('RepeatIgnore')])
-
-#     if meal:
-#         meal_string = encodeDF(df)
-#         meal_parts = divideString(meal_string, 1000)
-#         index = 0
-#         for i in meal_parts:
-#             db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
-#     else:
-#         snack_string = encodeDF(df)
-#         snack_parts = divideString(snack_string, 1000)
-#         index = 0
-#         for i in snack_parts:
-#             db.collection("users").document(user_name).collection("CleanSnackRecipes").document(f"CleanData Part {index}").set({"Data": snack_parts[i]})
-
+#     meal_string = encodeDF(df)
+#     meal_parts = divideString(meal_string, 1000)
+#     index = 0
+#     for i in meal_parts:
+#         db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
 #     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
-# nltk.download('wordnet')
-# cred = credentials.Certificate("cs125-healthapp-firebase-adminsdk-5vvud-16c28be37c.json")
-# app = firebase_admin.initialize_app(cred)
+#     dic['daliyCal'] = dic['daliyCal'] - receipts.iloc[which]['Calories']
+#     dic['fat'] = dic['fat'] - receipts.iloc[which]['FatContent']
+#     dic['cholesterol'] = dic['cholesterol'] - receipts.iloc[which]['CholesterolContent']
+#     dic['sodium'] = dic['sodium'] - receipts.iloc[which]['SodiumContent']
+#     dic['carbs'] = dic['carbs'] - receipts.iloc[which]['CarbohydrateContent']
+#     dic['fiber'] = dic['fiber'] - receipts.iloc[which]['FiberContent']
+#     dic['protein'] = dic['protein'] - receipts.iloc[which]['ProteinContent']
+#     dic['sugar'] = dic['sugar'] - receipts.iloc[which]['SugarContent']
+#     db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
 
-# db = firestore.client()
+# # Update Daily Nutritions ##########################################################################################################
+# def update_daily_nutritions(user_name):
+#     # from the frontend, set a timer at 0:00 to reset the currentday nutritions to everyday nutritions
+#     # The backend function that needs to be called
+#     dic = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+#     db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
 
-# userName = "Zhe"
+# # Recommendation ###################################################################################################################
+# def parse_and_format_steps(recipe_steps_str):
+#     recipe_steps_str = recipe_steps_str[2:-1]
+#     initial_steps = re.split('",\s*"\n*|",\n*"', recipe_steps_str)
+#     all_steps = []
 
+#     for step in initial_steps:
+#         step = step.strip('"')
+#         sub_steps = re.split(r'\.\s+(?=[A-Z])', step)
+#         all_steps.extend(sub_steps)
+#     formatted_steps = "\n".join(f"{i+1}. {step}" for i, step in enumerate(all_steps))
+    
+#     return formatted_steps
+
+# def recommend_top_5_receipts(user_name, ingredients):
+#     currentNutributionDict = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+#     preference_vector = db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").get().to_dict()["Data"]
+#     category_encoding = db.collection("RecipeCategory").document(f"RecipeCategory").get().to_dict()["Data"]
+
+#     model_string = db.collection("users").document(user_name).collection("TFIDF_Customize_Meal").document(f"TFIDF_Meal_Model").get().to_dict()["Data"]
+#     tfidf_model = decodeObject(model_string)
+#     string = ""
+#     for i in range(1000):
+#         string += db.collection("users").document(user_name).collection("TFIDF_Customize_Meal").document(f"TFIDF_Meal_Recipe Part {i}").get().to_dict()["Data"]
+#     tfidf_recipe = normalize(decodeObject(string))
+#     enocde_ingredients = normalize(tfidf_model.transform([tokenize_words(ingredients)]))
+
+#     Recommendations = np.array(list(cosine_similarity(enocde_ingredients, tfidf_recipe)[0]))
+#     Top_30 = Recommendations.argsort()[-30:][::-1]
+#     Recommendations_Top_30 = Recommendations[Top_30]
+
+#     string = ""
+#     for i in range(1000):
+#         string += db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {i}").get().to_dict()["Data"]
+#     df = decode2df(string)
+#     df['Calories'] = pd.to_numeric(df['Calories'], errors='coerce')
+#     df['FatContent'] = pd.to_numeric(df['FatContent'], errors='coerce')
+#     df['CholesterolContent'] = pd.to_numeric(df['CholesterolContent'], errors='coerce')
+#     df['SodiumContent'] = pd.to_numeric(df['SodiumContent'], errors='coerce')
+#     df['CarbohydrateContent'] = pd.to_numeric(df['CarbohydrateContent'], errors='coerce')
+#     df['FiberContent'] = pd.to_numeric(df['FiberContent'], errors='coerce')
+#     df['ProteinContent'] = pd.to_numeric(df['ProteinContent'], errors='coerce')
+#     df['SugarContent'] = pd.to_numeric(df['SugarContent'], errors='coerce')
+#     receipts = df.iloc[Top_30]
+#     # Combining Preference Vector
+#     receipts_categories = list(receipts['RecipeCategory'])
+#     receipts_categories_value = np.array([preference_vector[category_encoding[category]] for category in receipts_categories])
+#     Recommendations_Top_30 = Recommendations_Top_30 + 0.1 * receipts_categories_value
+#     temp = {index: score for index, score in zip(Top_30, Recommendations_Top_30)}
+#     Top_30 = np.array(list(dict(sorted(temp.items(), key=lambda item: item[1], reverse=True)).keys()))
+#     receipts = df.iloc[Top_30]
+#     receipts = receipts[
+#         (receipts["Calories"] <= currentNutributionDict['daliyCal']) &
+#         (receipts["FatContent"] <= currentNutributionDict['fat']) &
+#         (receipts["CholesterolContent"] <= currentNutributionDict['cholesterol']) &
+#         (receipts["SodiumContent"] <= currentNutributionDict['sodium']) &
+#         (receipts["CarbohydrateContent"] <= currentNutributionDict['carbs']) &
+#         (receipts["FiberContent"] <= currentNutributionDict['fiber']) &
+#         (receipts["ProteinContent"] <= currentNutributionDict['protein']) &
+#         (receipts["SugarContent"] <= currentNutributionDict['sugar'])
+#     ] 
+
+#     string = encodeDF(receipts[:5])
+#     db.collection("users").document(user_name).collection("Recommendation").document("Recommendation").set({"Data": string})
+#     return receipts[:5]
+
+# def get_receipts(user_name, ingredients): 
+#     # The backend function that needs to be called
+#     receipts = recommend_top_5_receipts(user_name, ingredients)
+#     receipts_info = []
+#     for i in range(5):
+#         recei = {}
+#         recei['Name'] = receipts.iloc[i]['Name']
+#         items = receipts.iloc[i]['RecipeIngredientQuantities'][3:-1].split('", "')
+#         words_q = [word for item in items for word in item.strip('"').split(' ')]
+#         items = receipts.iloc[i]['RecipeIngredientParts'][3:-1].split('", "')
+#         words_p = [word for item in items for word in item.strip('"').split(' ')]
+#         combined_list = [f"{q} {i}" for q, i in zip(words_q, words_p)]
+#         recei['Ingredients'] = ', '.join(combined_list)
+#         numbered_steps = parse_and_format_steps(receipts.iloc[i]['RecipeInstructions'])
+#         recei['Steps'] = numbered_steps
+#         recei['Calories'] = receipts.iloc[i]['Calories']
+#         recei['Fat'] = receipts.iloc[i]['FatContent']
+#         recei['Cholesterol'] = receipts.iloc[i]['CholesterolContent']
+#         recei['Sodium'] = receipts.iloc[i]['SodiumContent']
+#         recei['Carbohydrate'] = receipts.iloc[i]['CarbohydrateContent']
+#         recei['Fiber'] = receipts.iloc[i]['FiberContent']
+#         recei['Protein'] = receipts.iloc[i]['ProteinContent']
+#         recei['Sugar'] = receipts.iloc[i]['SugarContent']
+#         receipts_info.append(recei)
+#     db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': receipts_info})
+
+# userName = 'Coco'
 # allegeries = db.collection("users").document(userName).get().to_dict()['allergies']
 # height = db.collection("users").document(userName).get().to_dict()['height']
 # current = db.collection("users").document(userName).get().to_dict()['weight']
@@ -325,13 +394,11 @@
 # age = db.collection("users").document(userName).get().to_dict()['age']
 # preference = db.collection("users").document(userName).get().to_dict()['foodCategories']
 # time = db.collection("users").document(userName).get().to_dict()['target Date']
+# activity_level = db.collection("users").document(userName).get().to_dict()['activityLevel']
 # string = ""
 # for i in time:
 #     string = string + str(i) + "/"
 # string = string[:-1]
-
-# dic = dailyNutritions(height, current, target, string, sex, age)
+# dic = dailyNutritions(height, current, target, string, sex, age, activity_level)
 # db.collection("users").document(userName).collection("nutritions").document("everyday").set(dic)
-# # build_customize_tfidf_model(userName, allegeries)
-# initialize_preference_vector(userName, height, current, target, sex, age, preference)
-
+# print(dic)

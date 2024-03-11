@@ -94,7 +94,7 @@ def calculate_max_daily_calories(height_cm, current_weight_lbs, target_weight_lb
     current_weight_kg = current_weight_lbs / 2.20462
     target_weight_kg = target_weight_lbs / 2.20462
 
-    if sex.lower() == 'm':
+    if sex.lower() == 'male':
         BMR = 88.362 + (13.397 * current_weight_kg) + (4.799 * height_cm) - (5.677 * age)
     else:
         BMR = 447.593 + (9.247 * current_weight_kg) + (3.098 * height_cm) - (4.330 * age)
@@ -127,7 +127,7 @@ def dailyNutritions(Height, CurrentWeights, TargetWeights, time, sex, age, activ
     cholesterol_max = 300
     sodium_max = 2300
     carbs_max = daliyCal * 0.55 / 4
-    if sex == 'F':
+    if sex == 'Female':
         fiber_recommendation = 25
     else:
         fiber_recommendation = 38
@@ -257,11 +257,11 @@ def update_preference_vector(user_name, which):
     df = decode2df(string)
     indexs = list(receipts.index)
     indexs_ignore = np.array(indexs[: which] + indexs[which+1:])
-    df.iloc[indexs_ignore, df.columns.get_loc('RepeatIgnore')] += 1
-    df.iloc[indexs_ignore, df.columns.get_loc('RepeatChoose')] = 0
-    df.iloc[indexs[which], df.columns.get_loc('RepeatChoose')] += 1
-    df.iloc[indexs[which], df.columns.get_loc('RepeatIgnore')] = 0
-
+    for i in indexs_ignore:
+        df.loc[i, 'RepeatIgnore'] += 1
+        df.loc[i, 'RepeatChoose'] = 0
+    df.loc[indexs[which], 'RepeatChoose'] += 1
+    df.loc[indexs[which], 'RepeatIgnore'] = 0
     receipts_categories = list(receipts['RecipeCategory'])
     need = receipts_categories[which]
     categories_ignore = np.array(receipts_categories[: which] + receipts_categories[which+1:])
@@ -275,14 +275,14 @@ def update_preference_vector(user_name, which):
         db.collection("users").document(user_name).collection("CleanMealRecipes").document(f"CleanData Part {index}").set({"Data": meal_parts[i]})
     db.collection("users").document(user_name).collection("PreferenceVector").document("PreferenceVector").set({"Data": preference_vector})
 
-    dic['daliyCal'] = dic['daliyCal'] - receipts.iloc[which]['Calories']
-    dic['fat'] = dic['fat'] - receipts.iloc[which]['FatContent']
-    dic['cholesterol'] = dic['cholesterol'] - receipts.iloc[which]['CholesterolContent']
-    dic['sodium'] = dic['sodium'] - receipts.iloc[which]['SodiumContent']
-    dic['carbs'] = dic['carbs'] - receipts.iloc[which]['CarbohydrateContent']
-    dic['fiber'] = dic['fiber'] - receipts.iloc[which]['FiberContent']
-    dic['protein'] = dic['protein'] - receipts.iloc[which]['ProteinContent']
-    dic['sugar'] = dic['sugar'] - receipts.iloc[which]['SugarContent']
+    dic['daliyCal'] = round(dic['daliyCal'] - receipts.iloc[which]['Calories'],2)
+    dic['fat'] = round(dic['fat'] - receipts.iloc[which]['FatContent'],2)
+    dic['cholesterol'] = round(dic['cholesterol'] - receipts.iloc[which]['CholesterolContent'],2)
+    dic['sodium'] = round(dic['sodium'] - receipts.iloc[which]['SodiumContent'],2)
+    dic['carbs'] = round(dic['carbs'] - receipts.iloc[which]['CarbohydrateContent'],2)
+    dic['fiber'] = round(dic['fiber'] - receipts.iloc[which]['FiberContent'],2)
+    dic['protein'] = round(dic['protein'] - receipts.iloc[which]['ProteinContent'],2)
+    dic['sugar'] = round(dic['sugar'] - receipts.iloc[which]['SugarContent'],2)
     db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
 
 # Update Daily Nutritions ##########################################################################################################
@@ -382,7 +382,19 @@ def get_receipts(user_name, ingredients):
         recei['Protein'] = receipts.iloc[i]['ProteinContent']
         recei['Sugar'] = receipts.iloc[i]['SugarContent']
         receipts_info.append(recei)
-    db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': receipts_info})
+
+    lis = []
+    for index, i in enumerate(receipts_info):
+        string += f"Receipt {index + 1}:\n"
+        for j in i.keys():
+            if j == 'Steps':
+                string += f"{j}:\n{i[j]}\n"
+            else:
+                string += f"{j}: {i[j]}\n"
+        string += "\n"
+        lis.append(string)
+
+    db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': lis})
     
 # Callable Functions ###############################################################################################################
 @https_fn.on_request(
@@ -444,7 +456,7 @@ def updateDailyNutritions(req: https_fn.Request) -> https_fn.Response:
         cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
         cors_methods=["get", "post"],
     )
-)
+) 
 def getReceipts(req: https_fn.Request) -> https_fn.Response:
     args = req.args
     userName = args["userName"]
