@@ -13,6 +13,7 @@ struct UserDataCollectionView: View {
     @Binding var dataCollectionView: Bool
     @State private var newAllergy: String = ""
     @State private var newCat: String = "Select a category"
+    public var httpModel = httpRequestModel()
     
     let ageRange = 1...100
     let weightRange = 50...300
@@ -229,8 +230,7 @@ struct UserDataCollectionView: View {
                             print("sign up button clicked")
                             await authViewModel.signUpWithEmail()
                             await dataViewModel.saveUserData(userName: authViewModel.displayName, email: authViewModel.email)
-//                            let httpModel = httpRequestModel(name:authViewModel.displayName)
-//                            httpModel.initializeUser { response in }
+                            httpModel.initializeUser(userName: authViewModel.displayName) { response in }
                         }
                     }
                     .padding()
