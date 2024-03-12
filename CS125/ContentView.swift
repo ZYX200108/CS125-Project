@@ -11,7 +11,8 @@ import SwiftUI
 struct ContentView: View {
     @State var selectedTab = "Home"
     @ObservedObject public var authViewModel: AuthenticationViewModel
-    
+    @State var recommendationReady = false
+
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView()
@@ -24,11 +25,20 @@ struct ContentView: View {
                 .tabItem {
                     Image(systemName: "plus.app")
                 }
-            RecommendView()
-                .tag("Recommendation")
-                .tabItem {
-                    Image(systemName: "lightbulb.max")
-                }
+            if recommendationReady {
+                RecommendView()
+                    .tag("Recommendation")
+                    .tabItem {
+                        Image(systemName: "lightbulb.max")
+                    }
+            }
+            else if !recommendationReady {
+                ModelNotReadyView()
+                    .tag("Recommendation")
+                    .tabItem {
+                        Image(systemName: "lightbulb.max")
+                    }
+            }
             SettingView(authViewModel: authViewModel)
                 .tag("Setting")
                 .tabItem{

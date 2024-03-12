@@ -11,8 +11,7 @@ class httpRequestModel: ObservableObject {
     // Use a published property to update the UI in response to changes
     private var responseString: String = ""
     
-    init() {
-    }
+    init() {}
 
     func initializeUser(userName: String, completion: @escaping (String) -> Void) {
         let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/initializeUserModels?userName=\(userName)"
