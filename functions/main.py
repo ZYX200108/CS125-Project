@@ -1,5 +1,5 @@
 # Dependencies for callable functions.
-from firebase_functions import https_fn, options
+from firebase_functions import https_fn, options, scheduler_fn
 import firebase_admin
 # Dependencies for writing to Realtime Database.
 from firebase_admin import credentials, storage, firestore
@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import re
+import requests
 from io import BytesIO
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -394,6 +395,7 @@ def get_receipts(user_name, ingredients):
     )
 )
 def initializeUserModels(req: https_fn.Request) -> https_fn.Response:
+    print("start initializing")
     args = req.args
     userName = args["userName"]
     allegeries = db.collection("users").document(userName).get().to_dict()['allergies']
@@ -414,6 +416,7 @@ def initializeUserModels(req: https_fn.Request) -> https_fn.Response:
     db.collection("users").document(userName).collection("nutritions").document("everyday").set(dic)
     build_customize_tfidf_model(userName, allegeries)
     initialize_preference_vector(userName, height, current, target, sex, age, preference)
+    print("finish initializing")
     return https_fn.Response("User successfully created.")
 
 @https_fn.on_request(
@@ -423,10 +426,12 @@ def initializeUserModels(req: https_fn.Request) -> https_fn.Response:
     )
 )
 def updatePreferenceVector(req: https_fn.Request) -> https_fn.Response:
+    print("start updating preference vector")
     args = req.args
     userName = args["userName"]
     which = int(args["which"])
     update_preference_vector(userName, which)
+    print("finish updating preference vector")
     return https_fn.Response("Preference Vector Updated.")
 
 @https_fn.on_request(
@@ -436,9 +441,11 @@ def updatePreferenceVector(req: https_fn.Request) -> https_fn.Response:
     )
 )
 def updateDailyNutritions(req: https_fn.Request) -> https_fn.Response:
+    print("start updating daily nutritions")
     args = req.args
     userName = args["userName"]
     update_daily_nutritions(userName)
+    print("finish updating daily nutritions")
     return https_fn.Response("Daily Nutritions Updated.")
 
 @https_fn.on_request(
@@ -448,8 +455,53 @@ def updateDailyNutritions(req: https_fn.Request) -> https_fn.Response:
     )
 ) 
 def getReceipts(req: https_fn.Request) -> https_fn.Response:
+    print("start getting recipes")
     args = req.args
     userName = args["userName"]
     ingredients = args["ingredients"].split(",")
     get_receipts(userName, ingredients)
+    print("finish getting recipes")
     return https_fn.Response("Receipts Updated.")
+
+@scheduler_fn.on_schedule(schedule="every day 7:45")
+def morningRecipes(event: scheduler_fn.ScheduledEvent) -> None:
+    userNames = []
+    users_ref = db.collection("users")
+    docs = users_ref.stream()
+
+    for doc in docs:
+        userNames.append(doc.to_dict()["name"])
+    print(userNames)
+
+    for name in userNames:
+        get_receipts(name, ["chicken", "onion", "garlic", "tomato", "rice"])
+        print(f"finish {name}'s recipe")
+
+
+@scheduler_fn.on_schedule(schedule="every day 11:45")
+def noonRecipes(event: scheduler_fn.ScheduledEvent) -> None:
+    userNames = []
+    users_ref = db.collection("users")
+    docs = users_ref.stream()
+
+    for doc in docs:
+        userNames.append(doc.to_dict()["name"])
+    print(userNames)
+
+    for name in userNames:
+        get_receipts(name, ["beef", "brocolli", "milk", "bean"])
+        print(f"finish {name}'s recipe")
+
+@scheduler_fn.on_schedule(schedule="every day 17:45")
+def nightRecipes(event: scheduler_fn.ScheduledEvent) -> None:
+    userNames = []
+    users_ref = db.collection("users")
+    docs = users_ref.stream()
+
+    for doc in docs:
+        userNames.append(doc.to_dict()["name"])
+    print(userNames)
+
+    for name in userNames:
+        get_receipts(name, ["pork", "onion", "pepper", "oil", "beef"])
+        print(f"finish {name}'s recipe")

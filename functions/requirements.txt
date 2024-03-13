@@ -5,6 +5,6 @@ nltk
 unidecode
 scikit-learn
 datetime
-
+requests
 
 
