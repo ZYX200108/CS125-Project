@@ -10,6 +10,7 @@ import _AuthenticationServices_SwiftUI
 
 struct AuthenticationView: View {
     @ObservedObject public var authViewModel: AuthenticationViewModel
+    @ObservedObject public var mainViewModel: MainViewModel
     @State private var signUpView: Bool = false
 
     var body: some View {
@@ -78,7 +79,7 @@ struct AuthenticationView: View {
                     }
                 }
                 .sheet(isPresented: $signUpView) {
-                    SignUpView(authViewModel: authViewModel, signUpView: $signUpView)
+                    SignUpView(authViewModel: authViewModel, mainViewModel: mainViewModel, signUpView: $signUpView)
                 }
             }
         }
@@ -88,7 +89,8 @@ struct AuthenticationView: View {
 struct AuthenticationView_Previews: PreviewProvider {
     static var previews: some View {
         let authViewModel = AuthenticationViewModel()
-        AuthenticationView(authViewModel: authViewModel)
+        let mainViewModel = MainViewModel()
+        AuthenticationView(authViewModel: authViewModel, mainViewModel: mainViewModel)
     }
 }
 

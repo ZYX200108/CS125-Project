@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SignUpView: View {
     @ObservedObject public var authViewModel: AuthenticationViewModel
+    @ObservedObject public var mainViewModel: MainViewModel
     @Binding var signUpView: Bool
     @State var dataCollectionView: Bool = false
     
@@ -76,7 +77,7 @@ struct SignUpView: View {
             .foregroundColor(.white)
             .clipShape(Capsule())
             .sheet(isPresented: $dataCollectionView) {
-                UserDataCollectionView(authViewModel: authViewModel, dataCollectionView: $dataCollectionView)
+                UserDataCollectionView(authViewModel: authViewModel, mainViewModel: mainViewModel, dataCollectionView: $dataCollectionView)
             }
         }
     }
@@ -85,6 +86,7 @@ struct SignUpView: View {
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
         let authViewModel = AuthenticationViewModel()
-        SignUpView(authViewModel: authViewModel, signUpView: .constant(true))
+        let mainViewModel = MainViewModel()
+        SignUpView(authViewModel: authViewModel, mainViewModel: mainViewModel, signUpView: .constant(true))
     }
 }

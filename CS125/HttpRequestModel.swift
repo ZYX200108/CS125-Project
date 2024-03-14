@@ -13,7 +13,7 @@ class httpRequestModel: ObservableObject {
     
     init() {}
 
-    func initializeUser(userName: String, completion: @escaping (String) -> Void) {
+    func initializeUser(userName: String, viewModel: MainViewModel, completion: @escaping (String) -> Void) {
         let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/initializeUserModels?userName=\(userName)"
         guard let url = URL(string: urlString) else { return }
 
@@ -21,6 +21,7 @@ class httpRequestModel: ObservableObject {
             if let data = data, let responseString = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
                     completion(responseString)
+                    viewModel.recommendationReady = true
                 }
             } else if let error = error {
                 print("HTTP Request Failed \(error)")
@@ -30,6 +31,8 @@ class httpRequestModel: ObservableObject {
             }
         }
         task.resume()
+//        completion(responseString)
+//        viewModel.recommendationReady = true
     }
     
     func getRecipes(userName: String,  viewModel: MainViewModel, completion: @escaping (String) -> Void) {
@@ -97,5 +100,9 @@ class httpRequestModel: ObservableObject {
             }
         }
         task.resume()
+    }
+    
+    func afterConfirmRecipe(userName: String, which: Int, completion: @escaping (String) -> Void) {
+        self.updatePreferenceVector(userName: userName, which: which) {response in}
     }
 }

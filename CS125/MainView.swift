@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-class MainViewModel: ObservableObject {
-    @Published var recommendationReady = false
-}
-
 struct MainView: View {
     @StateObject public var authViewModel = AuthenticationViewModel()
     @StateObject public var mainViewModel = MainViewModel()
@@ -22,7 +18,7 @@ struct MainView: View {
                 ContentView(authViewModel: authViewModel)
                     .environmentObject(mainViewModel)
             } else {
-                AuthenticationView(authViewModel: authViewModel)
+                AuthenticationView(authViewModel: authViewModel, mainViewModel: mainViewModel)
             }
         }.onAppear {
             // Assigning mainViewModel to authViewModel's property

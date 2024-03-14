@@ -28,7 +28,7 @@ struct RecommendView: View {
                         self.selectedRecipeIndex = nil
                     }, onBack: {
                         self.selectedRecipeIndex = nil
-                    })
+                    }, userName: userName, which: index)
                 } else {
                     List(viewModel.recipes.indices, id: \.self) { index in  // Use indices of recipes array
                         let recipe = viewModel.recipes[index]
@@ -78,6 +78,9 @@ struct RecipeDetailView: View {
     var recipe: RecipeStructure
     var onConfirm: () -> Void
     var onBack: () -> Void
+    var userName: String
+    var which: Int
+    public var httpModel = httpRequestModel()
     
     var body: some View {
         ScrollView {
@@ -98,8 +101,13 @@ struct RecipeDetailView: View {
                         Label("Back", systemImage: "arrow.left")
                     }
                     Spacer()
-                    Button(action: onConfirm) {
-                        Label("Confirm", systemImage: "checkmark")
+                    Button("Confirm", systemImage: "checkmark") {
+                        httpModel.afterConfirmRecipe(userName: userName, which: which) {
+                            response in
+                        }
+                        print(userName)
+                        print(which)
+                        onConfirm()
                     }
                     .buttonStyle(.borderedProminent)
                 }

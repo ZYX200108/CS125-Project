@@ -10,6 +10,7 @@ import SwiftUI
 struct UserDataCollectionView: View {
     @StateObject var dataViewModel = UserDataCollectionViewModel()
     @ObservedObject public var authViewModel: AuthenticationViewModel
+    @ObservedObject public var mainViewModel: MainViewModel
     @Binding var dataCollectionView: Bool
     @State private var newAllergy: String = ""
     @State private var newCat: String = "Select a category"
@@ -230,7 +231,7 @@ struct UserDataCollectionView: View {
                             print("sign up button clicked")
                             await authViewModel.signUpWithEmail()
                             await dataViewModel.saveUserData(userName: authViewModel.displayName, email: authViewModel.email)
-//                            httpModel.initializeUser(userName: authViewModel.displayName) { response in }
+                            httpModel.initializeUser(userName: authViewModel.displayName, viewModel: mainViewModel) { response in }
                         }
                     }
                     .padding()
@@ -377,6 +378,7 @@ struct DateView: View {
 struct UserDataCollectionView_Previews: PreviewProvider {
     static var previews: some View {
         let authViewModel = AuthenticationViewModel()
-        UserDataCollectionView(authViewModel: authViewModel, dataCollectionView: .constant(true))
+        let mainViewModel = MainViewModel()
+        UserDataCollectionView(authViewModel: authViewModel, mainViewModel: mainViewModel, dataCollectionView: .constant(true))
     }
 }
