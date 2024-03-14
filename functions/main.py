@@ -613,3 +613,17 @@ def nightRecipes(event: scheduler_fn.ScheduledEvent) -> None:
         ingredients = get_ingredients(2, name)
         get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
+
+@scheduler_fn.on_schedule(schedule="every day 00:00")
+def updateDailyNutritions(event: scheduler_fn.ScheduledEvent) -> None:
+    userNames = []
+    users_ref = db.collection("users")
+    docs = users_ref.stream()
+
+    for doc in docs:
+        userNames.append(doc.to_dict()["name"])
+    print(userNames)
+
+    for name in userNames:
+        update_daily_nutritions(name)
+        print(f"finish {name}'s daily nutritions")
