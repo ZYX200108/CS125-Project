@@ -53,6 +53,7 @@ class AuthenticationViewModel: ObservableObject {
             try Auth.auth().signOut()
             DispatchQueue.main.async {
                 self.isUserAuthenticated = false
+                self.mainViewModel?.recommendationReady = false
             }
             self.initialize()
         } catch let signOutError as NSError {

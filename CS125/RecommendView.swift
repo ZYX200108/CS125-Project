@@ -40,7 +40,7 @@ struct RecommendView: View {
                     }
                     .navigationTitle("Recipes")
                     .onAppear {
-                        viewModel.fetchRecommendation(userID: self.userName)  // Pass the actual user ID here
+                        viewModel.fetchRecommendation(userID: self.userName)
                     }
                 }
             }
