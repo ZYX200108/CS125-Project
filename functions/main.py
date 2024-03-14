@@ -12,6 +12,7 @@ import pandas as pd
 import pickle
 import re
 import requests
+import random
 from io import BytesIO
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -21,8 +22,11 @@ from datetime import datetime
 nltk.download('wordnet')
 cred = credentials.Certificate("cs125-healthapp-firebase-adminsdk-5vvud-16c28be37c.json")
 app = firebase_admin.initialize_app(cred)
-
 db = firestore.client()
+
+APP_ID = '324f2faf'
+APP_KEY = 'c4d9cf195f9b6021136d65f8ad94f73f'
+url = "https://api.edamam.com/api/recipes/v2"
 
 # Utilities Model ##################################################################################################################
 def tokenize_words(words):
@@ -89,6 +93,13 @@ def decodeObject(base64_string: str):
     pickle_string = base64.b64decode(encoded_data)
     obj = pickle.loads(pickle_string)
     return obj
+
+def divideurlstring(s):
+    s = s[2: -1]
+    parts = s.split('", "')
+    parts[0] = parts[0][1:]
+    parts[-1] = parts[-1][:-1]
+    return parts
 
 # Calculate Nutritution ############################################################################################################
 def calculate_max_daily_calories(height_cm, current_weight_lbs, target_weight_lbs, sex, age, days, activity_level='not knonwn'):
@@ -267,8 +278,8 @@ def update_preference_vector(user_name, which):
     need = receipts_categories[which]
     categories_ignore = np.array(receipts_categories[: which] + receipts_categories[which+1:])
     for index, i in enumerate(categories_ignore):
-        preference_vector[category_encoding[i]] = max(0, preference_vector[category_encoding[i]] - 0.03 * df.iloc[indexs_ignore[index], df.columns.get_loc('RepeatIgnore')])
-    preference_vector[category_encoding[need]] = min(1, preference_vector[category_encoding[i]] + 0.03 * df.iloc[indexs_ignore[which], df.columns.get_loc('RepeatIgnore')])
+        preference_vector[category_encoding[i]] = max(0, preference_vector[category_encoding[i]] - 0.03 * df.loc[indexs_ignore[index], 'RepeatIgnore'])
+    preference_vector[category_encoding[need]] = min(1, preference_vector[category_encoding[i]] + 0.03 * df.loc[indexs[which], 'RepeatIgnore'])
     meal_string = encodeDF(df)
     meal_parts = divideString(meal_string, 1000)
     index = 0
@@ -293,6 +304,93 @@ def update_daily_nutritions(user_name):
     # The backend function that needs to be called
     dic = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
     db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
+
+# Ingredients Recommendation #######################################################################################################
+def get_ingredients(which_meal, user_name):
+    dic = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+    match which_meal:
+        case 0:
+            a = 0.25
+            params = {
+                        'type': 'public',
+                        'app_id': APP_ID,
+                        'app_key': APP_KEY,
+                        'mealType': 'Breakfast',
+                        'calories': f"0-{dic['daliyCal'] * a}",
+                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a}",
+                        'nutrients[FAT]': f"0-{dic['fat'] * a}",
+                        'nutrients[FIBTG]': f"0-{dic['fiber'] * a}",
+                        'nutrients[PROCNT]': f"0-{dic['protein'] * a}",
+                        'nutrients[SUGAR]': f"0-{dic['sugar'] * a}",
+                    } 
+        case 1:
+            a = 0.35
+            params = {
+                        'type': 'public',
+                        'app_id': APP_ID,
+                        'app_key': APP_KEY,
+                        'mealType': 'Lunch',
+                        'calories': f"0-{dic['daliyCal'] * a}",
+                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a}",
+                        'nutrients[FAT]': f"0-{dic['fat'] * a}",
+                        'nutrients[FIBTG]': f"0-{dic['fiber'] * a}",
+                        'nutrients[PROCNT]': f"0-{dic['protein'] * a}",
+                        'nutrients[SUGAR]': f"0-{dic['sugar'] * a}",
+                    } 
+        case 2:
+            a = 0.4
+            params = {
+                        'type': 'public',
+                        'app_id': APP_ID,
+                        'app_key': APP_KEY,
+                        'mealType': 'Dinner',
+                        'calories': f"0-{dic['daliyCal'] * a}",
+                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a}",
+                        'nutrients[FAT]': f"0-{dic['fat'] * a}",
+                        'nutrients[FIBTG]': f"0-{dic['fiber'] * a}",
+                        'nutrients[PROCNT]': f"0-{dic['protein'] * a}",
+                        'nutrients[SUGAR]': f"0-{dic['sugar'] * a}",
+                    }
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if 'hits' in data:
+        index = 0
+        lis = []
+        for hit in data['hits']:
+            sub_lis = []
+            recipe = hit['recipe']
+            ingredients = recipe['ingredients']
+            for ingredient in ingredients:
+                sub_lis.append(ingredient['food'])
+            if index == 30:
+                break
+            else:
+                index += 1
+            lis.append(sub_lis)
+        print(lis)
+        
+        condition = True
+        allergies = db.collection("users").document(user_name).get().to_dict()['allergies']
+        allergies = [allergy.lower() for allergy in allergies]
+        lis_copy = lis.copy()
+        final = []
+        index = 0
+
+        while condition:
+            ingredients = random.choice(lis_copy)
+            lis_copy.remove(ingredients)
+            for allergy in allergies:
+                for ingredient in ingredients:
+                    if allergy not in ingredient.lower() and ingredient not in final:
+                        final.append(ingredient)
+            if len(final) > 0 and index >= 3:
+                condition = False
+            index += 1
+        return final
+    else:
+        print("No recipes found.")
+
 
 # Recommendation ###################################################################################################################
 def parse_and_format_steps(recipe_steps_str):
@@ -383,6 +481,8 @@ def get_receipts(user_name, ingredients):
         recei['Fiber'] = receipts.iloc[i]['FiberContent']
         recei['Protein'] = receipts.iloc[i]['ProteinContent']
         recei['Sugar'] = receipts.iloc[i]['SugarContent']
+        parts = divideurlstring(receipts.iloc[i]['Images'])
+        recei['Image'] = parts
         receipts_info.append(recei)
 
     db.collection("users").document(user_name).collection("Recommendation").document("Recommendation_string").set({'Data': receipts_info})
@@ -417,6 +517,8 @@ def initializeUserModels(req: https_fn.Request) -> https_fn.Response:
     build_customize_tfidf_model(userName, allegeries)
     initialize_preference_vector(userName, height, current, target, sex, age, preference)
     print("finish initializing")
+    ingredients = ["chicken", "onion", "garlic", "tomato", "rice"]
+    get_receipts(userName, ingredients)
     return https_fn.Response("User successfully created.")
 
 @https_fn.on_request(
@@ -474,7 +576,9 @@ def morningRecipes(event: scheduler_fn.ScheduledEvent) -> None:
     print(userNames)
 
     for name in userNames:
-        get_receipts(name, ["chicken", "onion", "garlic", "tomato", "rice"])
+        # ingredients = ["mango", "kefir", "ounce", "tomato", "rice", "banana", "blue berry", "egg"]
+        ingredients = get_ingredients(0, name)
+        get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
 
 
@@ -489,7 +593,9 @@ def noonRecipes(event: scheduler_fn.ScheduledEvent) -> None:
     print(userNames)
 
     for name in userNames:
-        get_receipts(name, ["beef", "brocolli", "milk", "bean"])
+        # ingredients = ["chicken", "onion", "garlic", "tomato", "rice"]
+        ingredients = get_ingredients(1, name)
+        get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
 
 @scheduler_fn.on_schedule(schedule="every day 17:45")
@@ -503,5 +609,7 @@ def nightRecipes(event: scheduler_fn.ScheduledEvent) -> None:
     print(userNames)
 
     for name in userNames:
-        get_receipts(name, ["pork", "onion", "pepper", "oil", "beef"])
+        # ingredients = ["pork", "onion", "pepper", "oil", "beef"]
+        ingredients = get_ingredients(2, name)
+        get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
