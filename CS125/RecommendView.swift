@@ -5,71 +5,62 @@
 //  Created by Yuxue Zhou on 2/6/24.
 //
 
+
 import SwiftUI
 
-struct Recipe: Identifiable {
-    var id: Int
-    var name: String
-    var authorName: String
-    var cookTime: String
-    var prepTime: String
-    var description: String
-    var imageUrl: String
-    
-    // Combine additional details into one description
-    var detailedDescription: String {
-        "Author: \(authorName)\nCook Time: \(cookTime)\nPrep Time: \(prepTime)\n\n\(description)"
-    }
-}
-
 struct RecommendView: View {
-    let recipes: [Recipe] = [
-        Recipe(id: 38, name: "Low-Fat Berry Blue Frozen Dessert", authorName: "Dancer", cookTime: "PT24H", prepTime: "PT45M", description: "A delightful low-fat dessert that's perfect for a hot day.", imageUrl: "https://img.sndimg.com/food/image/upload/w_555,h_416,c_fit,fl_progressive,q_95/v1/img/recipes/38/YUeirxMLQaeE1h3v3qnM_229%20berry%20blue%20frzn%20dess.jpg"),
-        Recipe(id: 39, name: "Biryani", authorName: "elly9812", cookTime: "PT25M", prepTime: "PT4H", description: "A flavorful and aromatic biryani recipe, perfect for any occasion.", imageUrl: "https://img.sndimg.com/food/image/upload/w_555,h_416,c_fit,fl_progressive,q_95/v1/img/recipes/39/picM9Mhnw.jpg"),
-        Recipe(id: 40, name: "Best Lemonade", authorName: "Stephen Little", cookTime: "PT5M", prepTime: "PT30M", description: "A refreshing lemonade recipe, ideal for quenching your thirst.", imageUrl: "https://img.sndimg.com/food/image/upload/w_555,h_416,c_fit,fl_progressive,q_95/v1/img/recipes/40/picJ4Sz3N.jpg"),
-        Recipe(id: 41, name: "Carina's Tofu-Vegetable Kebabs", authorName: "Cyclopz", cookTime: "PT20M", prepTime: "PT24H", description: "Delicious tofu and vegetable kebabs, perfect for a healthy meal.", imageUrl: "https://img.sndimg.com/food/image/upload/w_555,h_416,c_fit,fl_progressive,q_95/v1/img/recipes/41/picmbLig8.jpg"),
-        Recipe(id: 42, name: "Cabbage Soup", authorName: "Duckie067", cookTime: "PT30M", prepTime: "PT20M", description: "A simple yet tasty cabbage soup recipe, great for a light meal.", imageUrl: "https://img.sndimg.com/food/image/upload/w_555,h_416,c_fit,fl_progressive,q_95/v1/img/recipes/42/picVEMxk8.jpg")
-    ]
+    @StateObject var viewModel = RecommendationRetrieveModel()  // Initialize the view model
+    @State private var selectedRecipeIndex: Int?  // Use an optional integer to track the selected recipe by index
+    @State private var confirmedRecipeName: String?
+    public var userName: String = ""
     
-    @State private var selectedRecipe: Recipe?
-    @State private var confirmedRecipeId: Int?
-    
+    init(name: String) {
+        self.userName = name
+    }
+
     var body: some View {
         NavigationView {
             VStack {
-                if let selectedRecipe = selectedRecipe {
+                if let index = selectedRecipeIndex, viewModel.recipes.indices.contains(index) {
+                    let selectedRecipe = viewModel.recipes[index]
                     RecipeDetailView(recipe: selectedRecipe, onConfirm: {
-                        self.confirmedRecipeId = selectedRecipe.id
-                        self.selectedRecipe = nil
+                        self.confirmedRecipeName = selectedRecipe.Name
+                        self.selectedRecipeIndex = nil
                     }, onBack: {
-                        self.selectedRecipe = nil
+                        self.selectedRecipeIndex = nil
                     })
                 } else {
-                    List(recipes) { recipe in
-                        RecipeRowView(recipe: recipe, isConfirmed: self.confirmedRecipeId == recipe.id)
+                    List(viewModel.recipes.indices, id: \.self) { index in  // Use indices of recipes array
+                        let recipe = viewModel.recipes[index]
+                        RecipeRowView(recipe: recipe, isConfirmed: self.confirmedRecipeName == recipe.Name)
                             .onTapGesture {
-                                self.selectedRecipe = recipe
+                                self.selectedRecipeIndex = index  // Assign the selected index
                             }
-                            .opacity(self.confirmedRecipeId == nil || self.confirmedRecipeId == recipe.id ? 1 : 0.3)
+                            .opacity(self.confirmedRecipeName == nil || self.confirmedRecipeName == recipe.Name ? 1 : 0.3)
                     }
                     .navigationTitle("Recipes")
+                    .onAppear {
+                        viewModel.fetchRecommendation(userID: self.userName)  // Pass the actual user ID here
+                    }
                 }
             }
+            .background(.white)
         }
+        .background(.white)
     }
 }
 
 struct RecipeRowView: View {
-    var recipe: Recipe
+    var recipe: RecipeStructure
     var isConfirmed: Bool
     
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text(recipe.name)
+                Text(recipe.Name)
                     .font(.headline)
                     .foregroundColor(isConfirmed ? .blue : .primary)
-                Text("By \(recipe.authorName)")
+                Text("Ingredients: \(recipe.Ingredients)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -84,25 +75,22 @@ struct RecipeRowView: View {
 }
 
 struct RecipeDetailView: View {
-    var recipe: Recipe
+    var recipe: RecipeStructure
     var onConfirm: () -> Void
     var onBack: () -> Void
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(recipe.name)
+                Text(recipe.Name)
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                AsyncImage(url: URL(string: recipe.imageUrl)) { image in
-                    image.resizable()
-                } placeholder: {
-                    ProgressView()
-                }
-                .aspectRatio(contentMode: .fit)
-                .cornerRadius(10)
+                Rectangle()  // Placeholder for image
+                    .fill(Color.gray)
+                    .aspectRatio(contentMode: .fit)
+                    .cornerRadius(10)
                 
-                Text(recipe.detailedDescription)
+                Text("Ingredients: \(recipe.Ingredients)\n\nSteps:\n\n \(recipe.Steps)")
                     .font(.body)
                 Spacer()
                 HStack {
@@ -118,16 +106,13 @@ struct RecipeDetailView: View {
             }
             .padding()
         }
-//        .navigationTitle(recipe.name)
     }
 }
 
 // Preview
 struct RecommendView_Previews: PreviewProvider {
     static var previews: some View {
-        RecommendView()
+        let name = "charlie"
+        RecommendView(name: name)
     }
 }
-
-
-

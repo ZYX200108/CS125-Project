@@ -17,6 +17,8 @@ class AuthenticationViewModel: ObservableObject {
     
     @Published var isUserAuthenticated: Bool = false
     
+    var mainViewModel: MainViewModel?
+    
     init() {
         checkAuthState()
     }
@@ -28,6 +30,7 @@ class AuthenticationViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.isUserAuthenticated = true
                 self.displayName = current_user.displayName ?? "unknown user"
+                self.mainViewModel?.recommendationReady = true
             }
         }
         catch {
@@ -62,9 +65,11 @@ class AuthenticationViewModel: ObservableObject {
             if user != nil {
                 self.isUserAuthenticated = true
                 if self.programStart == false {
-                    self.email = user?.email ?? "unknown email"
-                    self.displayName = user?.displayName ?? "unknown user"
-                    self.programStart = true
+                    DispatchQueue.main.async {
+                        self.email = user?.email ?? "unknown email"
+                        self.displayName = user?.displayName ?? "unknown user"
+                        self.programStart = true
+                    }
                 }
             } else {
                 self.isUserAuthenticated = false
@@ -73,8 +78,10 @@ class AuthenticationViewModel: ObservableObject {
         
         if self.isUserAuthenticated {
             let current_user = Auth.auth().currentUser
-            self.email = current_user?.email ?? "unknown email"
-            self.displayName = current_user?.displayName ?? "unknown user"
+            DispatchQueue.main.async {
+                self.email = current_user?.email ?? "unknown email"
+                self.displayName = current_user?.displayName ?? "unknown user"
+            }
         }
     }
     

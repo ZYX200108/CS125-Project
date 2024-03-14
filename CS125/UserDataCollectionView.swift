@@ -230,7 +230,7 @@ struct UserDataCollectionView: View {
                             print("sign up button clicked")
                             await authViewModel.signUpWithEmail()
                             await dataViewModel.saveUserData(userName: authViewModel.displayName, email: authViewModel.email)
-                            httpModel.initializeUser(userName: authViewModel.displayName) { response in }
+//                            httpModel.initializeUser(userName: authViewModel.displayName) { response in }
                         }
                     }
                     .padding()

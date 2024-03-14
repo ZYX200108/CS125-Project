@@ -73,6 +73,7 @@ class UserProfileViewModel: ObservableObject {
         }
     }
     
+    //
     func getUserData(email: String) async {
         do {
             let querySnapshot = try await db.collection("users").whereField("email", isEqualTo: email).getDocuments()

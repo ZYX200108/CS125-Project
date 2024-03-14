@@ -32,7 +32,7 @@ class httpRequestModel: ObservableObject {
         task.resume()
     }
     
-    func getRecipes(userName: String, completion: @escaping (String) -> Void) {
+    func getRecipes(userName: String,  viewModel: MainViewModel, completion: @escaping (String) -> Void) {
         var urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/getReceipts?userName=\(userName)&ingredients="
         let ingredients = ["chicken", "onion", "garlic", "tomato", "rice"]
         
@@ -47,6 +47,7 @@ class httpRequestModel: ObservableObject {
             if let data = data, let responseString = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
                     completion(responseString)
+                    viewModel.recommendationReady = true
                 }
             } else if let error = error {
                 print("HTTP Request Failed \(error)")

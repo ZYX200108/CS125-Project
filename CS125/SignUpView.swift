@@ -12,6 +12,10 @@ struct SignUpView: View {
     @Binding var signUpView: Bool
     @State var dataCollectionView: Bool = false
     
+    @State var userName = ""
+    @State var userEmail = ""
+    @State var userPW = ""
+    
     var body: some View {
         VStack {
             VStack{
@@ -31,7 +35,7 @@ struct SignUpView: View {
             HStack {
                 Image(systemName: "person")
                     .frame(width: 24, height: 24)
-                TextField("User name", text: $authViewModel.displayName)
+                TextField("User name", text: $userName)
                     .autocapitalization(.none)
                     .autocorrectionDisabled()
                     .textFieldStyle(.roundedBorder)
@@ -42,7 +46,7 @@ struct SignUpView: View {
             HStack {
                 Image(systemName: "envelope")
                     .frame(width: 24, height: 24)
-                TextField("Email", text: $authViewModel.email)
+                TextField("Email", text: $userEmail)
                     .autocapitalization(.none)
                     .autocorrectionDisabled()
                     .textFieldStyle(.roundedBorder)
@@ -53,7 +57,7 @@ struct SignUpView: View {
             HStack {
                 Image(systemName: "key.horizontal")
                     .frame(width: 24, height: 24)
-                SecureField("Password", text: $authViewModel.password)
+                SecureField("Password", text: $userPW)
                     .textFieldStyle(.roundedBorder)
                     .frame(width:330)
             }
@@ -61,6 +65,11 @@ struct SignUpView: View {
             
             Button("Continue") {
                 dataCollectionView = true
+                DispatchQueue.main.async {
+                    authViewModel.email = self.userEmail
+                    authViewModel.displayName = self.userName
+                    authViewModel.password = self.userPW
+                }
             }
             .padding()
             .background(Color.blue)
