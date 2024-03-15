@@ -18,8 +18,8 @@ class httpRequestModel: ObservableObject {
         guard let url = URL(string: urlString) else { return }
         
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 1800
-        configuration.timeoutIntervalForResource = 1800
+        configuration.timeoutIntervalForRequest = 3600
+        configuration.timeoutIntervalForResource = 3600
         
         let session = URLSession(configuration: configuration)
 
@@ -93,8 +93,8 @@ class httpRequestModel: ObservableObject {
         guard let url = URL(string: urlString) else { return }
         
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 1800
-        configuration.timeoutIntervalForResource = 1800
+        configuration.timeoutIntervalForRequest = 3600
+        configuration.timeoutIntervalForResource = 3600
         
         let session = URLSession(configuration: configuration)
 
