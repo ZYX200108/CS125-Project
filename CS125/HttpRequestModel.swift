@@ -16,11 +16,18 @@ class httpRequestModel: ObservableObject {
     func initializeUser(userName: String, viewModel: MainViewModel, completion: @escaping (String) -> Void) {
         let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/initializeUserModels?userName=\(userName)"
         guard let url = URL(string: urlString) else { return }
+        
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 1800
+        configuration.timeoutIntervalForResource = 1800
+        
+        let session = URLSession(configuration: configuration)
 
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        let task = session.dataTask(with: url) { data, response, error in
             if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                completion(responseString)
+                print("donnnnnnnnnne")
                 DispatchQueue.main.async {
-                    completion(responseString)
                     viewModel.recommendationReady = true
                 }
             } else if let error = error {
@@ -31,8 +38,6 @@ class httpRequestModel: ObservableObject {
             }
         }
         task.resume()
-//        completion(responseString)
-//        viewModel.recommendationReady = true
     }
     
     func getRecipes(userName: String,  viewModel: MainViewModel, completion: @escaping (String) -> Void) {
@@ -86,8 +91,14 @@ class httpRequestModel: ObservableObject {
         let urlString = "https://us-central1-cs125-healthapp.cloudfunctions.net/updatePreferenceVector?userName=\(userName)&which=\(which)"
         
         guard let url = URL(string: urlString) else { return }
+        
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 1800
+        configuration.timeoutIntervalForResource = 1800
+        
+        let session = URLSession(configuration: configuration)
 
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        let task = session.dataTask(with: url) { data, response, error in
             if let data = data, let responseString = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
                     completion(responseString)

@@ -9,8 +9,8 @@
 import SwiftUI
 
 struct RecommendView: View {
-    @StateObject var viewModel = RecommendationRetrieveModel()  // Initialize the view model
-    @State private var selectedRecipeIndex: Int?  // Use an optional integer to track the selected recipe by index
+    @StateObject var viewModel = RecommendationRetrieveModel()
+    @State private var selectedRecipeIndex: Int?
     @State private var confirmedRecipeName: String?
     public var userName: String = ""
     
@@ -30,16 +30,17 @@ struct RecommendView: View {
                         self.selectedRecipeIndex = nil
                     }, userName: userName, which: index)
                 } else {
-                    List(viewModel.recipes.indices, id: \.self) { index in  // Use indices of recipes array
+                    List(viewModel.recipes.indices, id: \.self) { index in
                         let recipe = viewModel.recipes[index]
                         RecipeRowView(recipe: recipe, isConfirmed: self.confirmedRecipeName == recipe.Name)
                             .onTapGesture {
-                                self.selectedRecipeIndex = index  // Assign the selected index
+                                self.selectedRecipeIndex = index
                             }
                             .opacity(self.confirmedRecipeName == nil || self.confirmedRecipeName == recipe.Name ? 1 : 0.3)
                     }
                     .navigationTitle("Recipes")
                     .onAppear {
+                        print(self.userName)
                         viewModel.fetchRecommendation(userID: self.userName)
                     }
                 }

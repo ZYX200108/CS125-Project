@@ -615,7 +615,7 @@ def nightRecipes(event: scheduler_fn.ScheduledEvent) -> None:
         print(f"finish {name}'s recipe")
 
 @scheduler_fn.on_schedule(schedule="every day 00:00")
-def updateDailyNutritions(event: scheduler_fn.ScheduledEvent) -> None:
+def updateDailyNutritionsScheduler(event: scheduler_fn.ScheduledEvent) -> None:
     userNames = []
     users_ref = db.collection("users")
     docs = users_ref.stream()
