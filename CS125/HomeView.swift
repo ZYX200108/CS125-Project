@@ -7,6 +7,8 @@
 
 import SwiftUI
 import HealthKit
+import FirebaseCore
+import FirebaseFirestore
 
 struct HomeView: View {
     @ObservedObject var healthKitManager = HealthKitManager()
@@ -15,6 +17,9 @@ struct HomeView: View {
     @State private var dailySteps = 0
     @State private var dailyGoal = 1000
     @State private var dailyCal = 0
+    public var userName: String
+    
+    let db = Firestore.firestore()
     
     var body: some View {
         VStack(spacing: 20) {
@@ -91,7 +96,7 @@ struct HomeView: View {
             }
             .padding(.horizontal)
             
-//            Spacer()
+            //            Spacer()
         }
         .padding()
         .onAppear {
@@ -109,10 +114,24 @@ struct HomeView: View {
                     print("Authorization Error: \(error?.localizedDescription ?? "Unknown error")")
                 }
             }
+            if (self.userName != "") {
+                let documentRef = db.collection("users").document(self.userName).collection("nutritions").document("currentday")
+                documentRef.setData(["dailyCaloryCost": self.dailyCal], merge: true) { error in
+                    if let error = error {
+                        print("Error updating document: \(error.localizedDescription)")
+                    } else {
+                        print("Document successfully updated")
+                        
+                    }
+                }
+            }
         }
     }
 }
 
-#Preview {
-    HomeView()
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        let name = "charlie"
+        HomeView(userName: name)
+    }
 }
