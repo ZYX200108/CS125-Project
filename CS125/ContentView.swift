@@ -20,11 +20,11 @@ struct ContentView: View {
                 .tabItem{
                     Image(systemName: "house")
                 }
-            AddFoodView()
-                .tag("Adding")
-                .tabItem {
-                    Image(systemName: "plus.app")
-                }
+//            AddFoodView()
+//                .tag("Adding")
+//                .tabItem {
+//                    Image(systemName: "plus.app")
+//                }
             if mainViewModel.recommendationReady {
                 RecommendView(name: authViewModel.displayName)
                     .tag("Recommendation")
