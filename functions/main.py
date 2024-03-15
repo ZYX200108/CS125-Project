@@ -303,11 +303,15 @@ def update_daily_nutritions(user_name):
     # from the frontend, set a timer at 0:00 to reset the currentday nutritions to everyday nutritions
     # The backend function that needs to be called
     dic = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+    dic['dailyCaloryCost'] = 0
     db.collection("users").document(user_name).collection("nutritions").document("currentday").set(dic)
+    dailyRecipes = {"Breakfast": "Not prepared", "Lunch": "Not prepared", "Dinner": "Not prepared"}
+    db.collection("users").document(user_name).collection("Recommendation").document("DailyRecipes").set(dailyRecipes)
 
 # Ingredients Recommendation #######################################################################################################
 def get_ingredients(which_meal, user_name):
     dic = db.collection("users").document(user_name).collection("nutritions").document("everyday").get().to_dict()
+    currentCal = db.collection("users").document(user_name).collection("nutritions").document("currentday").get().to_dict()['dailyCaloryCost']
     match which_meal:
         case 0:
             a = 0.25
@@ -316,7 +320,7 @@ def get_ingredients(which_meal, user_name):
                         'app_id': APP_ID,
                         'app_key': APP_KEY,
                         'mealType': 'Breakfast',
-                        'calories': f"0-{dic['daliyCal'] * a}",
+                        'calories': f"0-{dic['daliyCal'] * a + currentCal}",
                         'nutrients[CHOCDF]': f"0-{dic['carbs'] * a}",
                         'nutrients[FAT]': f"0-{dic['fat'] * a}",
                         'nutrients[FIBTG]': f"0-{dic['fiber'] * a}",
@@ -331,7 +335,7 @@ def get_ingredients(which_meal, user_name):
                         'app_key': APP_KEY,
                         'mealType': 'Lunch',
                         'calories': f"0-{dic['daliyCal'] * a}",
-                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a}",
+                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a + currentCal}",
                         'nutrients[FAT]': f"0-{dic['fat'] * a}",
                         'nutrients[FIBTG]': f"0-{dic['fiber'] * a}",
                         'nutrients[PROCNT]': f"0-{dic['protein'] * a}",
@@ -345,7 +349,7 @@ def get_ingredients(which_meal, user_name):
                         'app_key': APP_KEY,
                         'mealType': 'Dinner',
                         'calories': f"0-{dic['daliyCal'] * a}",
-                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a}",
+                        'nutrients[CHOCDF]': f"0-{dic['carbs'] * a + currentCal}",
                         'nutrients[FAT]': f"0-{dic['fat'] * a}",
                         'nutrients[FIBTG]': f"0-{dic['fiber'] * a}",
                         'nutrients[PROCNT]': f"0-{dic['protein'] * a}",
@@ -577,9 +581,12 @@ def morningRecipes(event: scheduler_fn.ScheduledEvent) -> None:
 
     for name in userNames:
         # ingredients = ["mango", "kefir", "ounce", "tomato", "rice", "banana", "blue berry", "egg"]
+        dic = db.collection("users").document(name).collection("Recommendation").document("DailyRecipes").get().to_dict()
         ingredients = get_ingredients(0, name)
         get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
+        dic['Breakfast'] = db.collection("users").document(name).collection("Recommendation").document("Recommendation_string").get().to_dict()["Data"]
+        db.collection("users").document(name).collection("Recommendation").document("DailyRecipes").set(dic)
 
 
 @scheduler_fn.on_schedule(schedule="every day 11:45")
@@ -594,9 +601,12 @@ def noonRecipes(event: scheduler_fn.ScheduledEvent) -> None:
 
     for name in userNames:
         # ingredients = ["chicken", "onion", "garlic", "tomato", "rice"]
+        dic = db.collection("users").document(name).collection("Recommendation").document("DailyRecipes").get().to_dict()
         ingredients = get_ingredients(1, name)
         get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
+        dic['Lunch'] = db.collection("users").document(name).collection("Recommendation").document("Recommendation_string").get().to_dict()["Data"]
+        db.collection("users").document(name).collection("Recommendation").document("DailyRecipes").set(dic)
 
 @scheduler_fn.on_schedule(schedule="every day 17:45")
 def nightRecipes(event: scheduler_fn.ScheduledEvent) -> None:
@@ -610,6 +620,9 @@ def nightRecipes(event: scheduler_fn.ScheduledEvent) -> None:
 
     for name in userNames:
         # ingredients = ["pork", "onion", "pepper", "oil", "beef"]
+        dic = db.collection("users").document(name).collection("Recommendation").document("DailyRecipes").get().to_dict()
         ingredients = get_ingredients(2, name)
         get_receipts(name, ingredients)
         print(f"finish {name}'s recipe")
+        dic['Dinner'] = db.collection("users").document(name).collection("Recommendation").document("Recommendation_string").get().to_dict()["Data"]
+        db.collection("users").document(name).collection("Recommendation").document("DailyRecipes").set(dic)
